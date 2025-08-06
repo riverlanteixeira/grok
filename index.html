@@ -319,7 +319,6 @@
                 <strong>📍 Localização:</strong><br>
                 <span id="location-status">Aguardando GPS...</span>
             </div>
-            <div id="mini-map" style="height: 200px; width: 100%; margin-top: 10px;"></div>
         </div>
 
         <div id="call-screen" class="ui-screen ui-element hidden">
@@ -373,8 +372,8 @@
             // Coordenadas dos objetos (latitude, longitude)
             const objectLocations = [
                 { lat: -27.639820466982767, lng: -48.66781802715769, name: 'Bicicleta' },
-                { lat: -27.635303605611135, lng: -48.674243432621154, name: 'Demogorgon' },
-                { lat: -27.630875028027543, lng: -48.679874967319165, name: 'Taco de Baseball' },
+                { lat: -27.639820466982765, lng: -48.66781802715767, name: 'Demogorgon' },
+                { lat: -27.639820466982765, lng: -48.66781802715768, name: 'Taco de Baseball' },
                 { lat: -27.639820466982764, lng: -48.66781802715768, name: 'Bússola' },
                 { lat: -27.639820466982763, lng: -48.66781802715768, name: 'Machado' },
                 { lat: -27.639820466982762, lng: -48.66781802715768, name: 'Walkie-Talkie' },
@@ -567,65 +566,39 @@
                 }
             }
 
-            let map = null;
-            let playerMarker = null;
-            let targetMarker = null;
-            
             function checkProximityToLocations() {
                 if (!currentLocation) return;
-            
+
                 const currentObjectLocation = objectLocations[currentObjectIndex];
                 if (!currentObjectLocation) return;
-            
+
                 const distance = calculateDistance(
                     currentLocation.lat, currentLocation.lng,
                     currentObjectLocation.lat, currentObjectLocation.lng
                 );
-            
+
                 console.log(`Distância para ${currentObjectLocation.name}: ${distance.toFixed(1)}m`);
-            
-                // Inicializar mapa na primeira chamada
-                if (!map) {
-                    map = L.map('mini-map', { zoomControl: false }).setView([currentLocation.lat, currentLocation.lng], 15);
-                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                        attribution: '&copy; OpenStreetMap contributors'
-                    }).addTo(map);
-            
-                    // Marcador do jogador (azul)
-                    playerMarker = L.circleMarker([currentLocation.lat, currentLocation.lng], {
-                        color: 'blue',
-                        radius: 8
-                    }).addTo(map);
-            
-                    // Marcador do alvo (vermelho)
-                    targetMarker = L.marker([currentObjectLocation.lat, currentObjectLocation.lng], {
-                        icon: L.divIcon({ className: 'target-icon', html: '<div style="background: red; width: 20px; height: 20px; border-radius: 50%;"></div>' })
-                    }).addTo(map);
-                } else {
-                    // Atualizar posições
-                    map.setView([currentLocation.lat, currentLocation.lng], 15);
-                    playerMarker.setLatLng([currentLocation.lat, currentLocation.lng]);
-                    targetMarker.setLatLng([currentObjectLocation.lat, currentObjectLocation.lng]);
-                }
-            
-                // Remover o texto de status, já que o mapa o substitui
+
+                // Atualizar indicador de localização
                 const locationStatus = document.getElementById('location-status');
-                locationStatus.innerHTML = '';
-            
+                const distanceText = distance > 1000 ?
+                    `${(distance / 1000).toFixed(1)}km` :
+                    `${Math.round(distance)}m`;
+
                 if (locationUnlocked[currentObjectIndex]) {
-                    instructionText.innerText = `Você chegou perto de ${currentObjectLocation.name}! Procure uma superfície para encontrá-lo.`;
+                    locationStatus.innerHTML = `✅ ${currentObjectLocation.name} desbloqueado!`;
                 } else if (distance <= PROXIMITY_RADIUS) {
                     // Jogador chegou perto o suficiente!
                     locationUnlocked[currentObjectIndex] = true;
                     canPlace = true;
-            
+
                     // Vibrar o dispositivo
                     vibrateDevice();
-            
+
                     // Atualizar instruções e status
                     instructionText.innerText = `Você chegou perto de ${currentObjectLocation.name}! Procure uma superfície para encontrá-lo.`;
                     locationStatus.innerHTML = `✅ ${currentObjectLocation.name} desbloqueado!`;
-            
+
                     console.log(`Localização desbloqueada: ${currentObjectLocation.name}`);
                 } else {
                     // Mostrar distância atual
@@ -889,9 +862,43 @@
 </body>
 
 </html>
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-</body>
 
-</html>
-</html>
+<div id="compass-ui" class="ui-element">
+    <div id="compass-arrow"></div>
+</div>
+
+#compass-arrow {
+    width: 0;
+    height: 0;
+    border-left: 15px solid transparent;
+    border-right: 15px solid transparent;
+    border-bottom: 30px solid #e72626;
+    transform: rotate(0deg);
+}
+let deviceHeading = 0;
+function handleDeviceOrientation(event) {
+    deviceHeading = event.alpha ? 360 - event.alpha : 0; // Heading de 0-360 graus
+    updateCompass();
+}
+}
+
+function updateCompass() {
+    if (!currentLocation || currentObjectIndex >= objectsToPlace.length || !locationUnlocked[currentObjectIndex]) return;
+    const target = objectLocations[currentObjectIndex];
+    const distance = calculateDistance(currentLocation.lat, currentLocation.lng, target.lat, target.lng);
+    if (distance < 9 || currentObjectPlaced) {
+        compassUi.style.display = 'none';
+        return;
+    }
+    compassUi.style.display = 'flex';
+    // Calcular bearing
+    const dLon = (target.lng - currentLocation.lng) * Math.PI / 180;
+    const y = Math.sin(dLon) * Math.cos(target.lat * Math.PI / 180);
+    const x = Math.cos(currentLocation.lat * Math.PI / 180) * Math.sin(target.lat * Math.PI / 180) -
+              Math.sin(currentLocation.lat * Math.PI / 180) * Math.cos(target.lat * Math.PI / 180) * Math.cos(dLon);
+    let bearing = Math.atan2(y, x) * 180 / Math.PI;
+    bearing = (bearing + 360) % 360;
+    // Ajustar com heading do dispositivo
+    const rotation = bearing - deviceHeading;
+    compassArrow.style.transform = `rotate(${rotation}deg)`;
+}
