@@ -862,37 +862,860 @@
 </body>
 
 </html>
-
-<style>
-    /* Estilos para a bússola */
-    #compass-container {
-        position: absolute;
-        bottom: 20px;
-        left: 50%;
-        transform: translateX(-50%);
-        width: 100px;
-        height: 100px;
-        background-color: rgba(0, 0, 0, 0.5);
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        transition: opacity 0.3s ease;
-    }
-
-    #compass-arrow {
-        width: 0;
-        height: 0;
-        border-left: 15px solid transparent;
-        border-right: 15px solid transparent;
-        border-bottom: 50px solid #e72626;
-        transform: rotate(0deg);
-    }
-
-    #compass-container.hidden {
-        opacity: 0;
-        pointer-events: none;
-    }
-</style>
-</body>
+<div id="compass-ui" style="position:fixed;bottom:30px;left:50%;transform:translateX(-50%);z-index:20;display:none;">
+  <img id="compass-img" src="assets/models/compass.glb" style="width:80px;height:80px;transform:rotate(0deg);">
+  <div id="compass-label" style="text-align:center;color:#fff;font-weight:bold;">Siga a seta!</div>
+</div>
 </html>
+const compassUi = document.getElementById('compass-ui');
+const compassImg = document.getElementById('compass-img');
+
+function showCompass() {
+  compassUi.style.display = 'block';
+}
+function hideCompass() {
+  compassUi.style.display = 'none';
+}
+function updateCompassDirection() {
+  if (!currentLocation) return;
+  const target = objectLocations[currentObjectIndex];
+  if (!target) return;
+  // Calcule o ângulo entre o jogador e o alvo
+  const dLon = (target.lng - currentLocation.lng);
+  const y = Math.sin(dLon) * Math.cos(target.lat);
+  const x = Math.cos(currentLocation.lat) * Math.sin(target.lat) - Math.sin(currentLocation.lat) * Math.cos(target.lat) * Math.cos(dLon);
+  let brng = Math.atan2(y, x) * 180 / Math.PI;
+  brng = (brng + 360) % 360;
+  // Ajuste para a orientação do dispositivo se desejar
+  compassImg.style.transform = `rotate(${brng}deg)`;
+}
+function collectItem(id) {
+  if (collectibles[id]) return;
+
+  collectibles[id] = true;
+  foundCollectibles++;
+
+  const entity = document.getElementById(id);
+  if (entity) entity.setAttribute('visible', 'false');
+
+  const listItem = document.querySelector(`#collectibles-list li[data-item="${id}"]`);
+  if (listItem) listItem.classList.add('found');
+
+  // Preparar para o próximo objeto
+  currentObjectIndex++;
+  currentObjectPlaced = false;
+
+  if (currentObjectIndex < objectsToPlace.length) {
+    // Ainda há objetos para colocar
+    let nextObjectName;
+    const nextObjectId = objectsToPlace[currentObjectIndex];
+    if (nextObjectId === 'bike') {
+      nextObjectName = 'Bicicleta';
+    } else if (nextObjectId === 'demogorgon') {
+      nextObjectName = 'Demogorgon';
+    } else if (nextObjectId === 'baseball-bat') {
+      nextObjectName = 'Taco de Baseball';
+    } else if (nextObjectId === 'compass') {
+      nextObjectName = 'Bússola';
+    } else if (nextObjectId === 'machado') {
+      nextObjectName = 'Machado';
+    } else if (nextObjectId === 'walkie-talkie') {
+      nextObjectName = 'Walkie-Talkie';
+    } else if (nextObjectId === 'will-mundo-invertido') {
+      nextObjectName = 'Will (Mundo Invertido)';
+    } else {
+      nextObjectName = 'próximo objeto';
+    }
+    instructionText.innerText = `Ótimo! Agora vá até a localização de ${nextObjectName}`;
+
+    // Resetar flags para o próximo objeto
+    canPlace = false;
+
+    // Verificar se já está perto da próxima localização
+    setTimeout(() => {
+      checkProximityToLocations();
+    }, 1500);
+  } else {
+    // Todos os objetos foram coletados
+    showVictoryScreen();
+  }
+}
+
+function showVictoryScreen() {
+  // Parar monitoramento de geolocalização
+  if (geolocationWatchId) {
+    navigator.geolocation.clearWatch(geolocationWatchId);
+  }
+
+  gameUi.style.display = 'none';
+  victoryScreen.classList.remove('hidden');
+}
+});
+</script>
+</body>
+
+</html>
+<div id="compass-ui" style="position:fixed;bottom:30px;left:50%;transform:translateX(-50%);z-index:20;display:none;">
+  <img id="compass-img" src="assets/models/compass.glb" style="width:80px;height:80px;transform:rotate(0deg);">
+  <div id="compass-label" style="text-align:center;color:#fff;font-weight:bold;">Siga a seta!</div>
+</div>
+</html>
+const compassUi = document.getElementById('compass-ui');
+const compassImg = document.getElementById('compass-img');
+
+function showCompass() {
+  compassUi.style.display = 'block';
+}
+function hideCompass() {
+  compassUi.style.display = 'none';
+}
+function updateCompassDirection() {
+  if (!currentLocation) return;
+  const target = objectLocations[currentObjectIndex];
+  if (!target) return;
+  // Calcule o ângulo entre o jogador e o alvo
+  const dLon = (target.lng - currentLocation.lng);
+  const y = Math.sin(dLon) * Math.cos(target.lat);
+  const x = Math.cos(currentLocation.lat) * Math.sin(target.lat) - Math.sin(currentLocation.lat) * Math.cos(target.lat) * Math.cos(dLon);
+  let brng = Math.atan2(y, x) * 180 / Math.PI;
+  brng = (brng + 360) % 360;
+  // Ajuste para a orientação do dispositivo se desejar
+  compassImg.style.transform = `rotate(${brng}deg)`;
+}
+function collectItem(id) {
+  if (collectibles[id]) return;
+
+  collectibles[id] = true;
+  foundCollectibles++;
+
+  const entity = document.getElementById(id);
+  if (entity) entity.setAttribute('visible', 'false');
+
+  const listItem = document.querySelector(`#collectibles-list li[data-item="${id}"]`);
+  if (listItem) listItem.classList.add('found');
+
+  // Preparar para o próximo objeto
+  currentObjectIndex++;
+  currentObjectPlaced = false;
+
+  if (currentObjectIndex < objectsToPlace.length) {
+    // Ainda há objetos para colocar
+    let nextObjectName;
+    const nextObjectId = objectsToPlace[currentObjectIndex];
+    if (nextObjectId === 'bike') {
+      nextObjectName = 'Bicicleta';
+    } else if (nextObjectId === 'demogorgon') {
+      nextObjectName = 'Demogorgon';
+    } else if (nextObjectId === 'baseball-bat') {
+      nextObjectName = 'Taco de Baseball';
+    } else if (nextObjectId === 'compass') {
+      nextObjectName = 'Bússola';
+    } else if (nextObjectId === 'machado') {
+      nextObjectName = 'Machado';
+    } else if (nextObjectId === 'walkie-talkie') {
+      nextObjectName = 'Walkie-Talkie';
+    } else if (nextObjectId === 'will-mundo-invertido') {
+      nextObjectName = 'Will (Mundo Invertido)';
+    } else {
+      nextObjectName = 'próximo objeto';
+    }
+    instructionText.innerText = `Ótimo! Agora vá até a localização de ${nextObjectName}`;
+
+    // Resetar flags para o próximo objeto
+    canPlace = false;
+
+    // Verificar se já está perto da próxima localização
+    setTimeout(() => {
+      checkProximityToLocations();
+    }, 1500);
+  } else {
+    // Todos os objetos foram coletados
+    showVictoryScreen();
+  }
+}
+
+function showVictoryScreen() {
+  // Parar monitoramento de geolocalização
+  if (geolocationWatchId) {
+    navigator.geolocation.clearWatch(geolocationWatchId);
+  }
+
+  gameUi.style.display = 'none';
+  victoryScreen.classList.remove('hidden');
+}
+});
+</script>
+</body>
+
+</html>
+<div id="compass-ui" style="position:fixed;bottom:30px;left:50%;transform:translateX(-50%);z-index:20;display:none;">
+  <img id="compass-img" src="assets/models/compass.glb" style="width:80px;height:80px;transform:rotate(0deg);">
+  <div id="compass-label" style="text-align:center;color:#fff;font-weight:bold;">Siga a seta!</div>
+</div>
+</html>
+const compassUi = document.getElementById('compass-ui');
+const compassImg = document.getElementById('compass-img');
+
+function showCompass() {
+  compassUi.style.display = 'block';
+}
+function hideCompass() {
+  compassUi.style.display = 'none';
+}
+function updateCompassDirection() {
+  if (!currentLocation) return;
+  const target = objectLocations[currentObjectIndex];
+  if (!target) return;
+  // Calcule o ângulo entre o jogador e o alvo
+  const dLon = (target.lng - currentLocation.lng);
+  const y = Math.sin(dLon) * Math.cos(target.lat);
+  const x = Math.cos(currentLocation.lat) * Math.sin(target.lat) - Math.sin(currentLocation.lat) * Math.cos(target.lat) * Math.cos(dLon);
+  let brng = Math.atan2(y, x) * 180 / Math.PI;
+  brng = (brng + 360) % 360;
+  // Ajuste para a orientação do dispositivo se desejar
+  compassImg.style.transform = `rotate(${brng}deg)`;
+}
+function collectItem(id) {
+  if (collectibles[id]) return;
+
+  collectibles[id] = true;
+  foundCollectibles++;
+
+  const entity = document.getElementById(id);
+  if (entity) entity.setAttribute('visible', 'false');
+
+  const listItem = document.querySelector(`#collectibles-list li[data-item="${id}"]`);
+  if (listItem) listItem.classList.add('found');
+
+  // Preparar para o próximo objeto
+  currentObjectIndex++;
+  currentObjectPlaced = false;
+
+  if (currentObjectIndex < objectsToPlace.length) {
+    // Ainda há objetos para colocar
+    let nextObjectName;
+    const nextObjectId = objectsToPlace[currentObjectIndex];
+    if (nextObjectId === 'bike') {
+      nextObjectName = 'Bicicleta';
+    } else if (nextObjectId === 'demogorgon') {
+      nextObjectName = 'Demogorgon';
+    } else if (nextObjectId === 'baseball-bat') {
+      nextObjectName = 'Taco de Baseball';
+    } else if (nextObjectId === 'compass') {
+      nextObjectName = 'Bússola';
+    } else if (nextObjectId === 'machado') {
+      nextObjectName = 'Machado';
+    } else if (nextObjectId === 'walkie-talkie') {
+      nextObjectName = 'Walkie-Talkie';
+    } else if (nextObjectId === 'will-mundo-invertido') {
+      nextObjectName = 'Will (Mundo Invertido)';
+    } else {
+      nextObjectName = 'próximo objeto';
+    }
+    instructionText.innerText = `Ótimo! Agora vá até a localização de ${nextObjectName}`;
+
+    // Resetar flags para o próximo objeto
+    canPlace = false;
+
+    // Verificar se já está perto da próxima localização
+    setTimeout(() => {
+      checkProximityToLocations();
+    }, 1500);
+  } else {
+    // Todos os objetos foram coletados
+    showVictoryScreen();
+  }
+}
+
+function showVictoryScreen() {
+  // Parar monitoramento de geolocalização
+  if (geolocationWatchId) {
+    navigator.geolocation.clearWatch(geolocationWatchId);
+  }
+
+  gameUi.style.display = 'none';
+  victoryScreen.classList.remove('hidden');
+}
+});
+</script>
+</body>
+
+</html>
+<div id="compass-ui" style="position:fixed;bottom:30px;left:50%;transform:translateX(-50%);z-index:20;display:none;">
+  <img id="compass-img" src="assets/models/compass.glb" style="width:80px;height:80px;transform:rotate(0deg);">
+  <div id="compass-label" style="text-align:center;color:#fff;font-weight:bold;">Siga a seta!</div>
+</div>
+</html>
+const compassUi = document.getElementById('compass-ui');
+const compassImg = document.getElementById('compass-img');
+
+function showCompass() {
+  compassUi.style.display = 'block';
+}
+function hideCompass() {
+  compassUi.style.display = 'none';
+}
+function updateCompassDirection() {
+  if (!currentLocation) return;
+  const target = objectLocations[currentObjectIndex];
+  if (!target) return;
+  // Calcule o ângulo entre o jogador e o alvo
+  const dLon = (target.lng - currentLocation.lng);
+  const y = Math.sin(dLon) * Math.cos(target.lat);
+  const x = Math.cos(currentLocation.lat) * Math.sin(target.lat) - Math.sin(currentLocation.lat) * Math.cos(target.lat) * Math.cos(dLon);
+  let brng = Math.atan2(y, x) * 180 / Math.PI;
+  brng = (brng + 360) % 360;
+  // Ajuste para a orientação do dispositivo se desejar
+  compassImg.style.transform = `rotate(${brng}deg)`;
+}
+function collectItem(id) {
+  if (collectibles[id]) return;
+
+  collectibles[id] = true;
+  foundCollectibles++;
+
+  const entity = document.getElementById(id);
+  if (entity) entity.setAttribute('visible', 'false');
+
+  const listItem = document.querySelector(`#collectibles-list li[data-item="${id}"]`);
+  if (listItem) listItem.classList.add('found');
+
+  // Preparar para o próximo objeto
+  currentObjectIndex++;
+  currentObjectPlaced = false;
+
+  if (currentObjectIndex < objectsToPlace.length) {
+    // Ainda há objetos para colocar
+    let nextObjectName;
+    const nextObjectId = objectsToPlace[currentObjectIndex];
+    if (nextObjectId === 'bike') {
+      nextObjectName = 'Bicicleta';
+    } else if (nextObjectId === 'demogorgon') {
+      nextObjectName = 'Demogorgon';
+    } else if (nextObjectId === 'baseball-bat') {
+      nextObjectName = 'Taco de Baseball';
+    } else if (nextObjectId === 'compass') {
+      nextObjectName = 'Bússola';
+    } else if (nextObjectId === 'machado') {
+      nextObjectName = 'Machado';
+    } else if (nextObjectId === 'walkie-talkie') {
+      nextObjectName = 'Walkie-Talkie';
+    } else if (nextObjectId === 'will-mundo-invertido') {
+      nextObjectName = 'Will (Mundo Invertido)';
+    } else {
+      nextObjectName = 'próximo objeto';
+    }
+    instructionText.innerText = `Ótimo! Agora vá até a localização de ${nextObjectName}`;
+
+    // Resetar flags para o próximo objeto
+    canPlace = false;
+
+    // Verificar se já está perto da próxima localização
+    setTimeout(() => {
+      checkProximityToLocations();
+    }, 1500);
+  } else {
+    // Todos os objetos foram coletados
+    showVictoryScreen();
+  }
+}
+
+function showVictoryScreen() {
+  // Parar monitoramento de geolocalização
+  if (geolocationWatchId) {
+    navigator.geolocation.clearWatch(geolocationWatchId);
+  }
+
+  gameUi.style.display = 'none';
+  victoryScreen.classList.remove('hidden');
+}
+});
+</script>
+</body>
+
+</html>
+<div id="compass-ui" style="position:fixed;bottom:30px;left:50%;transform:translateX(-50%);z-index:20;display:none;">
+  <img id="compass-img" src="assets/models/compass.glb" style="width:80px;height:80px;transform:rotate(0deg);">
+  <div id="compass-label" style="text-align:center;color:#fff;font-weight:bold;">Siga a seta!</div>
+</div>
+</html>
+const compassUi = document.getElementById('compass-ui');
+const compassImg = document.getElementById('compass-img');
+
+function showCompass() {
+  compassUi.style.display = 'block';
+}
+function hideCompass() {
+  compassUi.style.display = 'none';
+}
+function updateCompassDirection() {
+  if (!currentLocation) return;
+  const target = objectLocations[currentObjectIndex];
+  if (!target) return;
+  // Calcule o ângulo entre o jogador e o alvo
+  const dLon = (target.lng - currentLocation.lng);
+  const y = Math.sin(dLon) * Math.cos(target.lat);
+  const x = Math.cos(currentLocation.lat) * Math.sin(target.lat) - Math.sin(currentLocation.lat) * Math.cos(target.lat) * Math.cos(dLon);
+  let brng = Math.atan2(y, x) * 180 / Math.PI;
+  brng = (brng + 360) % 360;
+  // Ajuste para a orientação do dispositivo se desejar
+  compassImg.style.transform = `rotate(${brng}deg)`;
+}
+function collectItem(id) {
+  if (collectibles[id]) return;
+
+  collectibles[id] = true;
+  foundCollectibles++;
+
+  const entity = document.getElementById(id);
+  if (entity) entity.setAttribute('visible', 'false');
+
+  const listItem = document.querySelector(`#collectibles-list li[data-item="${id}"]`);
+  if (listItem) listItem.classList.add('found');
+
+  // Preparar para o próximo objeto
+  currentObjectIndex++;
+  currentObjectPlaced = false;
+
+  if (currentObjectIndex < objectsToPlace.length) {
+    // Ainda há objetos para colocar
+    let nextObjectName;
+    const nextObjectId = objectsToPlace[currentObjectIndex];
+    if (nextObjectId === 'bike') {
+      nextObjectName = 'Bicicleta';
+    } else if (nextObjectId === 'demogorgon') {
+      nextObjectName = 'Demogorgon';
+    } else if (nextObjectId === 'baseball-bat') {
+      nextObjectName = 'Taco de Baseball';
+    } else if (nextObjectId === 'compass') {
+      nextObjectName = 'Bússola';
+    } else if (nextObjectId === 'machado') {
+      nextObjectName = 'Machado';
+    } else if (nextObjectId === 'walkie-talkie') {
+      nextObjectName = 'Walkie-Talkie';
+    } else if (nextObjectId === 'will-mundo-invertido') {
+      nextObjectName = 'Will (Mundo Invertido)';
+    } else {
+      nextObjectName = 'próximo objeto';
+    }
+    instructionText.innerText = `Ótimo! Agora vá até a localização de ${nextObjectName}`;
+
+    // Resetar flags para o próximo objeto
+    canPlace = false;
+
+    // Verificar se já está perto da próxima localização
+    setTimeout(() => {
+      checkProximityToLocations();
+    }, 1500);
+  } else {
+    // Todos os objetos foram coletados
+    showVictoryScreen();
+  }
+}
+
+function showVictoryScreen() {
+  // Parar monitoramento de geolocalização
+  if (geolocationWatchId) {
+    navigator.geolocation.clearWatch(geolocationWatchId);
+  }
+
+  gameUi.style.display = 'none';
+  victoryScreen.classList.remove('hidden');
+}
+});
+</script>
+</body>
+
+</html>
+<div id="compass-ui" style="position:fixed;bottom:30px;left:50%;transform:translateX(-50%);z-index:20;display:none;">
+  <img id="compass-img" src="assets/models/compass.glb" style="width:80px;height:80px;transform:rotate(0deg);">
+  <div id="compass-label" style="text-align:center;color:#fff;font-weight:bold;">Siga a seta!</div>
+</div>
+</html>
+const compassUi = document.getElementById('compass-ui');
+const compassImg = document.getElementById('compass-img');
+
+function showCompass() {
+  compassUi.style.display = 'block';
+}
+function hideCompass() {
+  compassUi.style.display = 'none';
+}
+function updateCompassDirection() {
+  if (!currentLocation) return;
+  const target = objectLocations[currentObjectIndex];
+  if (!target) return;
+  // Calcule o ângulo entre o jogador e o alvo
+  const dLon = (target.lng - currentLocation.lng);
+  const y = Math.sin(dLon) * Math.cos(target.lat);
+  const x = Math.cos(currentLocation.lat) * Math.sin(target.lat) - Math.sin(currentLocation.lat) * Math.cos(target.lat) * Math.cos(dLon);
+  let brng = Math.atan2(y, x) * 180 / Math.PI;
+  brng = (brng + 360) % 360;
+  // Ajuste para a orientação do dispositivo se desejar
+  compassImg.style.transform = `rotate(${brng}deg)`;
+}
+function collectItem(id) {
+  if (collectibles[id]) return;
+
+  collectibles[id] = true;
+  foundCollectibles++;
+
+  const entity = document.getElementById(id);
+  if (entity) entity.setAttribute('visible', 'false');
+
+  const listItem = document.querySelector(`#collectibles-list li[data-item="${id}"]`);
+  if (listItem) listItem.classList.add('found');
+
+  // Preparar para o próximo objeto
+  currentObjectIndex++;
+  currentObjectPlaced = false;
+
+  if (currentObjectIndex < objectsToPlace.length) {
+    // Ainda há objetos para colocar
+    let nextObjectName;
+    const nextObjectId = objectsToPlace[currentObjectIndex];
+    if (nextObjectId === 'bike') {
+      nextObjectName = 'Bicicleta';
+    } else if (nextObjectId === 'demogorgon') {
+      nextObjectName = 'Demogorgon';
+    } else if (nextObjectId === 'baseball-bat') {
+      nextObjectName = 'Taco de Baseball';
+    } else if (nextObjectId === 'compass') {
+      nextObjectName = 'Bússola';
+    } else if (nextObjectId === 'machado') {
+      nextObjectName = 'Machado';
+    } else if (nextObjectId === 'walkie-talkie') {
+      nextObjectName = 'Walkie-Talkie';
+    } else if (nextObjectId === 'will-mundo-invertido') {
+      nextObjectName = 'Will (Mundo Invertido)';
+    } else {
+      nextObjectName = 'próximo objeto';
+    }
+    instructionText.innerText = `Ótimo! Agora vá até a localização de ${nextObjectName}`;
+
+    // Resetar flags para o próximo objeto
+    canPlace = false;
+
+    // Verificar se já está perto da próxima localização
+    setTimeout(() => {
+      checkProximityToLocations();
+    }, 1500);
+  } else {
+    // Todos os objetos foram coletados
+    showVictoryScreen();
+  }
+}
+
+function showVictoryScreen() {
+  // Parar monitoramento de geolocalização
+  if (geolocationWatchId) {
+    navigator.geolocation.clearWatch(geolocationWatchId);
+  }
+
+  gameUi.style.display = 'none';
+  victoryScreen.classList.remove('hidden');
+}
+});
+</script>
+</body>
+
+</html>
+<div id="compass-ui" style="position:fixed;bottom:30px;left:50%;transform:translateX(-50%);z-index:20;display:none;">
+  <img id="compass-img" src="assets/models/compass.glb" style="width:80px;height:80px;transform:rotate(0deg);">
+  <div id="compass-label" style="text-align:center;color:#fff;font-weight:bold;">Siga a seta!</div>
+</div>
+</html>
+const compassUi = document.getElementById('compass-ui');
+const compassImg = document.getElementById('compass-img');
+
+function showCompass() {
+  compassUi.style.display = 'block';
+}
+function hideCompass() {
+  compassUi.style.display = 'none';
+}
+function updateCompassDirection() {
+  if (!currentLocation) return;
+  const target = objectLocations[currentObjectIndex];
+  if (!target) return;
+  // Calcule o ângulo entre o jogador e o alvo
+  const dLon = (target.lng - currentLocation.lng);
+  const y = Math.sin(dLon) * Math.cos(target.lat);
+  const x = Math.cos(currentLocation.lat) * Math.sin(target.lat) - Math.sin(currentLocation.lat) * Math.cos(target.lat) * Math.cos(dLon);
+  let brng = Math.atan2(y, x) * 180 / Math.PI;
+  brng = (brng + 360) % 360;
+  // Ajuste para a orientação do dispositivo se desejar
+  compassImg.style.transform = `rotate(${brng}deg)`;
+}
+function collectItem(id) {
+  if (collectibles[id]) return;
+
+  collectibles[id] = true;
+  foundCollectibles++;
+
+  const entity = document.getElementById(id);
+  if (entity) entity.setAttribute('visible', 'false');
+
+  const listItem = document.querySelector(`#collectibles-list li[data-item="${id}"]`);
+  if (listItem) listItem.classList.add('found');
+
+  // Preparar para o próximo objeto
+  currentObjectIndex++;
+  currentObjectPlaced = false;
+
+  if (currentObjectIndex < objectsToPlace.length) {
+    // Ainda há objetos para colocar
+    let nextObjectName;
+    const nextObjectId = objectsToPlace[currentObjectIndex];
+    if (nextObjectId === 'bike') {
+      nextObjectName = 'Bicicleta';
+    } else if (nextObjectId === 'demogorgon') {
+      nextObjectName = 'Demogorgon';
+    } else if (nextObjectId === 'baseball-bat') {
+      nextObjectName = 'Taco de Baseball';
+    } else if (nextObjectId === 'compass') {
+      nextObjectName = 'Bússola';
+    } else if (nextObjectId === 'machado') {
+      nextObjectName = 'Machado';
+    } else if (nextObjectId === 'walkie-talkie') {
+      nextObjectName = 'Walkie-Talkie';
+    } else if (nextObjectId === 'will-mundo-invertido') {
+      nextObjectName = 'Will (Mundo Invertido)';
+    } else {
+      nextObjectName = 'próximo objeto';
+    }
+    instructionText.innerText = `Ótimo! Agora vá até a localização de ${nextObjectName}`;
+
+    // Resetar flags para o próximo objeto
+    canPlace = false;
+
+    // Verificar se já está perto da próxima localização
+    setTimeout(() => {
+      checkProximityToLocations();
+    }, 1500);
+  } else {
+    // Todos os objetos foram coletados
+    showVictoryScreen();
+  }
+}
+
+function showVictoryScreen() {
+  // Parar monitoramento de geolocalização
+  if (geolocationWatchId) {
+    navigator.geolocation.clearWatch(geolocationWatchId);
+  }
+
+  gameUi.style.display = 'none';
+  victoryScreen.classList.remove('hidden');
+}
+});
+</script>
+</body>
+
+</html>
+<div id="compass-ui" style="position:fixed;bottom:30px;left:50%;transform:translateX(-50%);z-index:20;display:none;">
+  <img id="compass-img" src="assets/models/compass.glb" style="width:80px;height:80px;transform:rotate(0deg);">
+  <div id="compass-label" style="text-align:center;color:#fff;font-weight:bold;">Siga a seta!</div>
+</div>
+</html>
+const compassUi = document.getElementById('compass-ui');
+const compassImg = document.getElementById('compass-img');
+
+function showCompass() {
+  compassUi.style.display = 'block';
+}
+function hideCompass() {
+  compassUi.style.display = 'none';
+}
+function updateCompassDirection() {
+  if (!currentLocation) return;
+  const target = objectLocations[currentObjectIndex];
+  if (!target) return;
+  // Calcule o ângulo entre o jogador e o alvo
+  const dLon = (target.lng - currentLocation.lng);
+  const y = Math.sin(dLon) * Math.cos(target.lat);
+  const x = Math.cos(currentLocation.lat) * Math.sin(target.lat) - Math.sin(currentLocation.lat) * Math.cos(target.lat) * Math.cos(dLon);
+  let brng = Math.atan2(y, x) * 180 / Math.PI;
+  brng = (brng + 360) % 360;
+  // Ajuste para a orientação do dispositivo se desejar
+  compassImg.style.transform = `rotate(${brng}deg)`;
+}
+function collectItem(id) {
+  if (collectibles[id]) return;
+
+  collectibles[id] = true;
+  foundCollectibles++;
+
+  const entity = document.getElementById(id);
+  if (entity) entity.setAttribute('visible', 'false');
+
+  const listItem = document.querySelector(`#collectibles-list li[data-item="${id}"]`);
+  if (listItem) listItem.classList.add('found');
+
+  // Preparar para o próximo objeto
+  currentObjectIndex++;
+  currentObjectPlaced = false;
+
+  if (currentObjectIndex < objectsToPlace.length) {
+    // Ainda há objetos para colocar
+    let nextObjectName;
+    const nextObjectId = objectsToPlace[currentObjectIndex];
+    if (nextObjectId === 'bike') {
+      nextObjectName = 'Bicicleta';
+    } else if (nextObjectId === 'demogorgon') {
+      nextObjectName = 'Demogorgon';
+    } else if (nextObjectId === 'baseball-bat') {
+      nextObjectName = 'Taco de Baseball';
+    } else if (nextObjectId === 'compass') {
+      nextObjectName = 'Bússola';
+    } else if (nextObjectId === 'machado') {
+      nextObjectName = 'Machado';
+    } else if (nextObjectId === 'walkie-talkie') {
+      nextObjectName = 'Walkie-Talkie';
+    } else if (nextObjectId === 'will-mundo-invertido') {
+      nextObjectName = 'Will (Mundo Invertido)';
+    } else {
+      nextObjectName = 'próximo objeto';
+    }
+    instructionText.innerText = `Ótimo! Agora vá até a localização de ${nextObjectName}`;
+
+    // Resetar flags para o próximo objeto
+    canPlace = false;
+
+    // Verificar se já está perto da próxima localização
+    setTimeout(() => {
+      checkProximityToLocations();
+    }, 1500);
+  } else {
+    // Todos os objetos foram coletados
+    showVictoryScreen();
+  }
+}
+
+function showVictoryScreen() {
+  // Parar monitoramento de geolocalização
+  if (geolocationWatchId) {
+    navigator.geolocation.clearWatch(geolocationWatchId);
+  }
+
+  gameUi.style.display = 'none';
+  victoryScreen.classList.remove('hidden');
+}
+});
+</script>
+</body>
+
+</html>
+<div id="compass-ui" style="position:fixed;bottom:30px;left:50%;transform:translateX(-50%);z-index:20;display:none;">
+  <img id="compass-img" src="assets/models/compass.glb" style="width:80px;height:80px;transform:rotate(0deg);">
+  <div id="compass-label" style="text-align:center;color:#fff;font-weight:bold;">Siga a seta!</div>
+</div>
+</html>
+const compassUi = document.getElementById('compass-ui');
+const compassImg = document.getElementById('compass-img');
+
+function showCompass() {
+  compassUi.style.display = 'block';
+}
+function hideCompass() {
+  compassUi.style.display = 'none';
+}
+function updateCompassDirection() {
+  if (!currentLocation) return;
+  const target = objectLocations[currentObjectIndex];
+  if (!target) return;
+  // Calcule o ângulo entre o jogador e o alvo
+  const dLon = (target.lng - currentLocation.lng);
+  const y = Math.sin(dLon) * Math.cos(target.lat);
+  const x = Math.cos(currentLocation.lat) * Math.sin(target.lat) - Math.sin(currentLocation.lat) * Math.cos(target.lat) * Math.cos(dLon);
+  let brng = Math.atan2(y, x) * 180 / Math.PI;
+  brng = (brng + 360) % 360;
+  // Ajuste para a orientação do dispositivo se desejar
+  compassImg.style.transform = `rotate(${brng}deg)`;
+}
+function collectItem(id) {
+  if (collectibles[id]) return;
+
+  collectibles[id] = true;
+  foundCollectibles++;
+
+  const entity = document.getElementById(id);
+  if (entity) entity.setAttribute('visible', 'false');
+
+  const listItem = document.querySelector(`#collectibles-list li[data-item="${id}"]`);
+  if (listItem) listItem.classList.add('found');
+
+  // Preparar para o próximo objeto
+  currentObjectIndex++;
+  currentObjectPlaced = false;
+
+  if (currentObjectIndex < objectsToPlace.length) {
+    // Ainda há objetos para colocar
+    let nextObjectName;
+    const nextObjectId = objectsToPlace[currentObjectIndex];
+    if (nextObjectId === 'bike') {
+      nextObjectName = 'Bicicleta';
+    } else if (nextObjectId === 'demogorgon') {
+      nextObjectName = 'Demogorgon';
+    } else if (nextObjectId === 'baseball-bat') {
+      nextObjectName = 'Taco de Baseball';
+    } else if (nextObjectId === 'compass') {
+      nextObjectName = 'Bússola';
+    } else if (nextObjectId === 'machado') {
+      nextObjectName = 'Machado';
+    } else if (nextObjectId === 'walkie-talkie') {
+      nextObjectName = 'Walkie-Talkie';
+    } else if (nextObjectId === 'will-mundo-invertido') {
+      nextObjectName = 'Will (Mundo Invertido)';
+    } else {
+      nextObjectName = 'próximo objeto';
+    }
+    instructionText.innerText = `Ótimo! Agora vá até a localização de ${nextObjectName}`;
+
+    // Resetar flags para o próximo objeto
+    canPlace = false;
+
+    // Verificar se já está perto da próxima localização
+    setTimeout(() => {
+      checkProximityToLocations();
+    }, 1500);
+  } else {
+    // Todos os objetos foram coletados
+    showVictoryScreen();
+  }
+}
+
+function showVictoryScreen() {
+  // Parar monitoramento de geolocalização
+  if (geolocationWatchId) {
+    navigator.geolocation.clearWatch(geolocationWatchId);
+  }
+
+  gameUi.style.display = 'none';
+  victoryScreen.classList.remove('hidden');
+}
+});
+</script>
+</body>
+
+</html>
+<div id="compass-ui" style="position:fixed;bottom:30px;left:50%;transform:translateX(-50%);z-index:20;display:none;">
+  <img id="compass-img" src="assets/models/compass.glb" style="width:80px;height:80px;transform:rotate(0deg);">
+  <div id="compass-label" style="text-align:center;color:#fff;font-weight:bold;">Siga a seta!</div>
+</div>
+</html>
+const compassUi = document.getElementById('compass-ui');
+const compassImg = document.getElementById('compass-img');
+
+function showCompass() {
+  compassUi.style.display = 'block';
+}
+function hideCompass() {
+  compassUi.style.display = 'none';
+}
+function updateCompassDirection() {
+  if (!currentLocation) return;
+  const target = objectLocations[currentObjectIndex];
+  if (!target) return;
+  // Calcule o ângulo entre o jogador e o alvo
+  const dLon = (target.l
