@@ -863,42 +863,36 @@
 
 </html>
 
-<div id="compass-ui" class="ui-element">
-    <div id="compass-arrow"></div>
-</div>
-
-#compass-arrow {
-    width: 0;
-    height: 0;
-    border-left: 15px solid transparent;
-    border-right: 15px solid transparent;
-    border-bottom: 30px solid #e72626;
-    transform: rotate(0deg);
-}
-let deviceHeading = 0;
-function handleDeviceOrientation(event) {
-    deviceHeading = event.alpha ? 360 - event.alpha : 0; // Heading de 0-360 graus
-    updateCompass();
-}
-}
-
-function updateCompass() {
-    if (!currentLocation || currentObjectIndex >= objectsToPlace.length || !locationUnlocked[currentObjectIndex]) return;
-    const target = objectLocations[currentObjectIndex];
-    const distance = calculateDistance(currentLocation.lat, currentLocation.lng, target.lat, target.lng);
-    if (distance < 9 || currentObjectPlaced) {
-        compassUi.style.display = 'none';
-        return;
+<style>
+    /* Estilos para a bússola */
+    #compass-container {
+        position: absolute;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 100px;
+        height: 100px;
+        background-color: rgba(0, 0, 0, 0.5);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: opacity 0.3s ease;
     }
-    compassUi.style.display = 'flex';
-    // Calcular bearing
-    const dLon = (target.lng - currentLocation.lng) * Math.PI / 180;
-    const y = Math.sin(dLon) * Math.cos(target.lat * Math.PI / 180);
-    const x = Math.cos(currentLocation.lat * Math.PI / 180) * Math.sin(target.lat * Math.PI / 180) -
-              Math.sin(currentLocation.lat * Math.PI / 180) * Math.cos(target.lat * Math.PI / 180) * Math.cos(dLon);
-    let bearing = Math.atan2(y, x) * 180 / Math.PI;
-    bearing = (bearing + 360) % 360;
-    // Ajustar com heading do dispositivo
-    const rotation = bearing - deviceHeading;
-    compassArrow.style.transform = `rotate(${rotation}deg)`;
-}
+
+    #compass-arrow {
+        width: 0;
+        height: 0;
+        border-left: 15px solid transparent;
+        border-right: 15px solid transparent;
+        border-bottom: 50px solid #e72626;
+        transform: rotate(0deg);
+    }
+
+    #compass-container.hidden {
+        opacity: 0;
+        pointer-events: none;
+    }
+</style>
+</body>
+</html>
