@@ -1,549 +1,106 @@
 <!doctype html>
 <html lang="pt-BR">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<title>Stranger Things — Pedra Branca Invertida (AR)</title>
-
-<!-- A-Frame -->
-<script src="https://unpkg.com/aframe@1.4.2/dist/aframe.min.js"></script>
-<!-- AR.js (A-Frame integration) for hiro marker fallback -->
-<script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
-<!-- MindAR (image tracking / NFT pipeline) -->
-<script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
-
-<style>
-  :root{--bg:#03051a;--accent:#ef4444;--muted:#94a3b8}
-  html,body{height:100%;margin:0;font-family:Inter,system-ui,Segoe UI,Roboto,Arial;color:#e6eef8;background:linear-gradient(180deg,#000814,#001122)}
-  /* Loading / Splash */
-  #loading{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;z-index:9999;background:linear-gradient(180deg, rgba(0,0,0,0.9), rgba(0,0,0,0.6))}
-  #logo{width:340px;max-width:72%}
-  #loadingText{color:var(--muted)}
-  #progressBar{width:320px;max-width:78%;height:14px;background:#06122a;border-radius:999px;overflow:hidden}
-  #progressFill{height:100%;width:0%;background:linear-gradient(90deg,#f97316,#ef4444)}
-  #startBtn{margin-top:12px;padding:10px 20px;border-radius:10px;border:0;background:var(--accent);color:#fff;font-weight:700;cursor:pointer;display:none}
-  /* Dustin call */
-  #dustinCall{position:fixed;left:50%;top:12%;transform:translateX(-50%);z-index:999;display:none}
-  #dustinCall img{width:220px;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,0.6)}
-  /* HUD arrow */
-  #arrowHud{position:fixed;right:18px;bottom:18px;width:110px;height:110px;border-radius:999px;background:rgba(4,6,10,0.6);display:none;align-items:center;justify-content:center;flex-direction:column;z-index:998;padding:8px}
-  #arrowHud svg{width:64px;height:64px;transform-origin:center center;transition:transform 180ms linear}
-  #distanceText{font-size:12px;color:var(--muted);margin-top:6px}
-  /* Small message */
-  #msg{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#081225;padding:10px 14px;border-radius:10px;color:#dbeafe;display:none;z-index:999}
-  #note{position:fixed;left:12px;top:12px;background:rgba(0,0,0,0.45);padding:8px 10px;border-radius:8px;font-size:13px;color:var(--muted);z-index:999}
-  /* Scene fullscreen */
-  a-scene{position:fixed;inset:0;width:100%;height:100%;z-index:1}
-</style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Stranger Things — AR Game</title>
+  <script src="https://unpkg.com/aframe@1.4.2/dist/aframe.min.js"></script>
+  <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
+  <style>
+    html,body{height:100%;margin:0;background:#000814;color:#e6eef8;font-family:Arial}
+    #loading{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;background:rgba(0,0,0,0.9);z-index:9999}
+    #startBtn{padding:12px 24px;font-size:18px;background:#ef4444;border:none;color:#fff;cursor:pointer}
+    #arrowHud{position:fixed;right:18px;bottom:18px;width:100px;height:100px;border-radius:50%;background:rgba(0,0,0,0.5);display:none;align-items:center;justify-content:center;flex-direction:column;z-index:998}
+    #arrowHud svg{width:48px;height:48px;transform-origin:center center;transition:transform 200ms linear}
+    #distanceText{font-size:12px;color:#94a3b8;margin-top:6px}
+    #msg{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:#081225;padding:10px 14px;border-radius:8px;color:#dbeafe;display:none;z-index:999}
+  </style>
 </head>
 <body>
-
-<!-- Loading / splash -->
-<div id="loading" aria-live="polite">
-  <img id="logo" src="https://riverlanteixeira.github.io/grok/assets/img/stranger-things-logo.png" alt="Stranger Things Logo">
-  <div id="loadingText">Carregando... (pré-cache para funcionamento offline)</div>
-  <div id="progressBar"><div id="progressFill"></div></div>
-  <button id="startBtn">Iniciar o Jogo</button>
-</div>
-
-<div id="note">Hospede no GitHub Pages (HTTPS). Permita câmera, localização e orientação no celular.</div>
-
-<!-- Dustin call -->
-<div id="dustinCall">
-  <img src="https://riverlanteixeira.github.io/grok/assets/img/dustin-call.png" alt="Dustin calling" id="dustinImg">
-</div>
-
-<!-- Arrow / compass HUD -->
-<div id="arrowHud" aria-hidden="false">
-  <svg viewBox="0 0 24 24" id="arrowSvg"><path d="M12 2 L15 10 H13 V22 H11 V10 H9 L12 2 Z" fill="#fff"/></svg>
-  <div id="distanceText">-- m</div>
-</div>
-
-<div id="msg"></div>
-
-<!-- ===== A-FRAME + MindAR Scene =====
-     - MindAR image target is expected at: assets/mind/targets.mind (pre-generated)
-     - AR.js marker 'hiro' exists as fallback for hiro interactions
--->
-<a-scene
-  embedded
-  vr-mode-ui="enabled: false"
-  renderer="logarithmicDepthBuffer:true;antialias:true"
-  mindar-image="imageTargetSrc: https://riverlanteixeira.github.io/grok/assets/mind/targets.mind; maxTrack: 1; uiLoading: none; uiScanning: none;"
-  arjs="sourceType: webcam; debugUIEnabled: false;"
-  device-orientation-permission-ui="enabled: false">
-
-  <a-assets timeout="600000">
-    <!-- audios -->
-    <audio id="audioIntro" src="https://riverlanteixeira.github.io/grok/assets/audio/dustin-intro.mp3"></audio>
-    <audio id="audio1" src="https://riverlanteixeira.github.io/grok/assets/audio/dustin-missao-1-completa.mp3"></audio>
-    <audio id="audio2" src="https://riverlanteixeira.github.io/grok/assets/audio/dustin-missao-2-completa.mp3"></audio>
-    <audio id="audio3" src="https://riverlanteixeira.github.io/grok/assets/audio/dustin-missao-3-completa.mp3"></audio>
-    <audio id="audio4" src="https://riverlanteixeira.github.io/grok/assets/audio/dustin-missao-4-completa.mp3"></audio>
-
-    <!-- images/gifs -->
-    <img id="luzesGif" src="https://riverlanteixeira.github.io/grok/assets/img/luzes-piscando.gif">
-    <img id="portalGif" src="https://riverlanteixeira.github.io/grok/assets/gif/portal.gif">
-    <!-- model assets -->
-    <a-asset-item id="bicicletaModel" src="https://riverlanteixeira.github.io/grok/assets/models/bicicleta-will.glb"></a-asset-item>
-    <a-asset-item id="demogorgonModel" src="https://riverlanteixeira.github.io/grok/assets/models/demogorgon_animated.glb"></a-asset-item>
-    <a-asset-item id="willModel" src="https://riverlanteixeira.github.io/grok/assets/models/will_byers.glb"></a-asset-item>
-
-    <img id="tacoImg" src="https://riverlanteixeira.github.io/grok/assets/img/taco.png">
-    <img id="gasImg" src="https://riverlanteixeira.github.io/grok/assets/img/gasolina.png">
-  </a-assets>
-
-  <!-- MindAR target entity (index 0 used for lab portal or other) -->
-  <a-entity mindar-image-target="targetIndex: 0">
-    <!-- default plane to show gifs when marker is found -->
-    <a-plane id="mindPlane" position="0 0 0" rotation="-90 0 0" width="1.6" height="0.95" material="shader:flat; src: #luzesGif; transparent:true;"></a-plane>
-  </a-entity>
-
-  <!-- AR.js marker hiro fallback -->
-  <a-marker preset="hiro" id="hiroMarker">
-    <a-plane id="hiroPlane" position="0 0 0" rotation="-90 0 0" width="1.6" height="0.95" material="shader:flat; src: #luzesGif; transparent:true;"></a-plane>
-  </a-marker>
-
-  <!-- World-placed entities (spawned dynamically when player reaches locations) -->
-  <a-entity id="worldRoot">
-
-    <a-entity id="bicicletaEntity" gltf-model="#bicicletaModel" scale="0.45 0.45 0.45" position="0 -0.6 -1.2" visible="false" class="collectable"></a-entity>
-
-    <a-entity id="demogorgonEntity" gltf-model="#demogorgonModel" scale="0.7 0.7 0.7" position="0 -0.6 -1.2" visible="false" class="enemy"></a-entity>
-
-    <a-entity id="willEntity" gltf-model="#willModel" scale="0.6 0.6 0.6" position="0 -0.6 -1.2" visible="false" class="collectable"></a-entity>
-
-    <a-plane id="storeTaco" material="shader:flat; src:#tacoImg" width="0.6" height="0.6" position="-0.35 -0.5 -1.0" visible="false" class="collectableStore"></a-plane>
-    <a-plane id="storeGas"  material="shader:flat; src:#gasImg"  width="0.6" height="0.6" position="0.35 -0.5 -1.0" visible="false" class="collectableStore"></a-plane>
-
-  </a-entity>
-
-  <a-entity camera id="cam"></a-entity>
-</a-scene>
-
+  <div id="loading">
+    <img src="https://riverlanteixeira.github.io/grok/assets/img/stranger-things-logo.png" width="260">
+    <button id="startBtn">Iniciar o Jogo</button>
+  </div>
+  <div id="msg"></div>
+  <div id="arrowHud">
+    <svg viewBox="0 0 24 24" id="arrowSvg"><path d="M12 2 L15 10 H13 V22 H11 V10 H9 L12 2 Z" fill="#fff"/></svg>
+    <div id="distanceText">-- m</div>
+  </div>
+  <a-scene embedded vr-mode-ui="enabled:false" mindar-image="imageTargetSrc: https://riverlanteixeira.github.io/grok/assets/mind/targets.mind; uiLoading:none; uiScanning:none;" arjs="sourceType: webcam; debugUIEnabled: false;" device-orientation-permission-ui="enabled:false">
+    <a-assets timeout="300000">
+      <audio id="audioIntro" src="https://riverlanteixeira.github.io/grok/assets/audio/dustin-intro.mp3"></audio>
+      <audio id="audio1" src="https://riverlanteixeira.github.io/grok/assets/audio/dustin-missao-1-completa.mp3"></audio>
+      <a-asset-item id="bicicletaModel" src="https://riverlanteixeira.github.io/grok/assets/models/bicicleta-will.glb"></a-asset-item>
+    </a-assets>
+    <!-- MindAR Target -->
+    <a-entity mindar-image-target="targetIndex:0">
+      <a-plane id="mindPlane" position="0 0 0" rotation="-90 0 0" width="1.6" height="0.9" material="shader:flat; src: #luzesGif; transparent:true;"></a-plane>
+    </a-entity>
+    <!-- Hiro fallback -->
+    <a-marker preset="hiro" id="hiroMarker">
+      <a-plane id="hiroPlane" position="0 0 0" rotation="-90 0 0" width="1.6" height="0.9" material="shader:flat; src: #luzesGif; transparent:true;"></a-plane>
+    </a-marker>
+    <a-entity id="bicicletaEntity" gltf-model="#bicicletaModel" scale="0.5 0.5 0.5" position="0 -0.6 -1" visible="false" class="collectable"></a-entity>
+    <a-entity camera id="cam"></a-entity>
+  </a-scene>
 <script>
-/* -----------------------
-   Configurações / assets
-   ----------------------- */
-const ASSET_BASE = 'https://riverlanteixeira.github.io/grok';
-const ASSETS = [
-  `${ASSET_BASE}/assets/img/stranger-things-logo.png`,
-  `${ASSET_BASE}/assets/img/dustin-call.png`,
-  `${ASSET_BASE}/assets/audio/dustin-intro.mp3`,
-  `${ASSET_BASE}/assets/audio/dustin-missao-1-completa.mp3`,
-  `${ASSET_BASE}/assets/audio/dustin-missao-2-completa.mp3`,
-  `${ASSET_BASE}/assets/audio/dustin-missao-3-completa.mp3`,
-  `${ASSET_BASE}/assets/audio/dustin-missao-4-completa.mp3`,
-  `${ASSET_BASE}/assets/models/bicicleta-will.glb`,
-  `${ASSET_BASE}/assets/models/demogorgon_animated.glb`,
-  `${ASSET_BASE}/assets/models/will_byers.glb`,
-  `${ASSET_BASE}/assets/img/luzes-piscando.gif`,
-  `${ASSET_BASE}/assets/gif/portal.gif`,
-  `${ASSET_BASE}/assets/img/taco.png`,
-  `${ASSET_BASE}/assets/img/gasolina.png`,
-  `${ASSET_BASE}/assets/mind/targets.mind`
-];
+  const startBtn = document.getElementById('startBtn');
+  const loading = document.getElementById('loading');
+  const msg = document.getElementById('msg');
+  const arrowHud = document.getElementById('arrowHud');
+  const arrowSvg = document.getElementById('arrowSvg');
+  const distText = document.getElementById('distanceText');
+  const audioIntro = document.getElementById('audioIntro');
+  const bicicleta = document.getElementById('bicicletaEntity');
+  const MISSIONS = {1:{name:"Floresta das Trevas",lat:-27.63985135643477,lon:-48.66777779450669,radius:10}};
+  let currentMission=0, watchId=null, lastPos=null, heading=0;
 
-// Missões (coordenadas conforme PRD)
-const MISSIONS = {
-  1: { name: "Floresta das Trevas", lat:-27.63985135643477, lon:-48.66777779450669, radius:10 },
-  2: { name: "Casa do Will", lat:-27.64018223044791, lon:-48.66796420763507, radius:20 },
-  3: { name: "Fuga Demogorgon", lat:-27.63939989306851, lon:-48.66739759100892, radius:20 },
-  4: { name: "Loja Melvald's", lat:-27.64018876475326, lon:-48.667940067755126, radius:12 },
-  5: { name: "Laboratório Hawkins", lat:-27.63948543364662, lon:-48.66733120633911, radius:12 },
-  6: { name: "Encontro Demogorgon", lat:-27.63980145794119, lon:-48.667683246669554, radius:12 },
-  7: { name: "Encontrar Will", lat:-27.639195545822158, lon:-48.66734595890275, radius:12 }
-};
-
-let currentMission = 0;
-let assetsLoaded = 0;
-const totalAssets = ASSETS.length;
-
-const progressFill = document.getElementById('progressFill');
-const loadingText = document.getElementById('loadingText');
-const startBtn = document.getElementById('startBtn');
-const loadingDiv = document.getElementById('loading');
-const dustinCall = document.getElementById('dustinCall');
-const arrowHud = document.getElementById('arrowHud');
-const arrowSvg = document.getElementById('arrowSvg');
-const distanceText = document.getElementById('distanceText');
-const msgBox = document.getElementById('msg');
-
-const audioIntro = document.getElementById('audioIntro');
-const audio1 = document.getElementById('audio1');
-const audio2 = document.getElementById('audio2');
-const audio3 = document.getElementById('audio3');
-const audio4 = document.getElementById('audio4');
-
-const bicicletaEl = document.getElementById('bicicletaEntity');
-const demogorgonEl = document.getElementById('demogorgonEntity');
-const willEl = document.getElementById('willEntity');
-const storeTaco = document.getElementById('storeTaco');
-const storeGas = document.getElementById('storeGas');
-
-let watchId = null;
-let lastPos = null;
-let deviceHeading = 0;
-let geofenceTriggered = {};
-let storeCollected = { taco:false, gas:false };
-
-/* -----------------------
-   SERVICE WORKER (inline)
-   ----------------------- */
-if ('serviceWorker' in navigator) {
-  const swCode = `
-  const CACHE_NAME = 'st-ar-cache-v1';
-  self.addEventListener('install', e => { self.skipWaiting(); });
-  self.addEventListener('activate', e => e.waitUntil(self.clients.claim()));
-  self.addEventListener('message', e => {
-    if (e.data && e.data.type === 'CACHE_ASSETS') {
-      caches.open(CACHE_NAME).then(cache => cache.addAll(e.data.assets.map(u => new Request(u, {mode:'no-cors'}))));
-    }
+  function showMsg(t){ msg.innerText=t; msg.style.display='block'; setTimeout(()=>msg.style.display='none', 3000); }
+  startBtn.addEventListener('click', async ()=>{
+    loading.style.display='none';
+    showMsg('Preparando...');
+    // orientation permission
+    if (typeof DeviceOrientationEvent.requestPermission==='function') try{ await DeviceOrientationEvent.requestPermission(); }catch{}
+    // play intro
+    audioIntro.play().catch(()=>{});
+    currentMission=1; startGPS(); arrowHud.style.display='flex';
+    document.querySelector('a-scene').enterVR().catch(()=>{});
   });
-  self.addEventListener('fetch', e => {
-    e.respondWith(caches.match(e.request).then(resp => resp || fetch(e.request)));
-  });
-  `;
-  const blob = new Blob([swCode], {type: 'application/javascript'});
-  const swUrl = URL.createObjectURL(blob);
-  navigator.serviceWorker.register(swUrl).then(()=>console.log('SW registered')).catch(err=>console.warn('SW reg failed', err));
-}
 
-/* -----------------------
-   PRELOAD ASSETS (simple)
-   ----------------------- */
-async function preloadAll() {
-  for (const url of ASSETS) {
-    try {
-      await fetch(url, {mode:'no-cors'}).catch(()=>null);
-    } catch(e){}
-    assetsLoaded++;
-    const pct = Math.round((assetsLoaded/totalAssets)*100);
-    progressFill.style.width = pct + '%';
-    loadingText.innerText = `Carregando... ${pct}%`;
-  }
-  loadingText.innerText = 'Pronto!';
-  startBtn.style.display = 'inline-block';
-
-  // request service worker to cache assets
-  if (navigator.serviceWorker && navigator.serviceWorker.controller) {
-    navigator.serviceWorker.controller.postMessage({type:'CACHE_ASSETS', assets: ASSETS});
-  } else {
-    // try again a bit later
-    setTimeout(()=> {
-      if (navigator.serviceWorker && navigator.serviceWorker.controller) {
-        navigator.serviceWorker.controller.postMessage({type:'CACHE_ASSETS', assets: ASSETS});
+  function startGPS(){
+    if (!navigator.geolocation) {alert('GPS não disponível');return;}
+    watchId = navigator.geolocation.watchPosition(p => {
+      lastPos = p.coords;
+      const d = distance(p.coords.latitude,p.coords.longitude,MISSIONS[1].lat,MISSIONS[1].lon);
+      distText.innerText = d.toFixed(0) + ' m';
+      if (d<=MISSIONS[1].radius){
+        if (navigator.vibrate) navigator.vibrate(300);
+        arrowHud.style.display='none';
+        showMsg('Você chegou! Bicicleta aparece na tela — toque para coletar.');
+        bicicleta.setAttribute('visible','true');
+        BMP();
       }
-    }, 2000);
+    }, e=>console.warn(e),{enableHighAccuracy:true});
   }
-}
-preloadAll();
 
-/* -----------------------
-   UI helpers
-   ----------------------- */
-function showMsg(text, ms=3500) {
-  msgBox.innerText = text;
-  msgBox.style.display = 'block';
-  clearTimeout(showMsg._t);
-  showMsg._t = setTimeout(()=> msgBox.style.display='none', ms);
-}
-
-/* -----------------------
-   START FLOW
-   ----------------------- */
-startBtn.addEventListener('click', async () => {
-  // hide loading, show Dustin call UI
-  loadingDiv.style.display = 'none';
-  dustinCall.style.display = 'block';
-
-  // ask for device orientation permission (iOS)
-  if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
-    try { await DeviceOrientationEvent.requestPermission(); } catch(e){}
+  function distance(lat1,lon1,lat2,lon2){
+    const R=6371000;const φ1=lat1*Math.PI/180, φ2=lat2*Math.PI/180;
+    const Δφ=(lat2-lat1)*Math.PI/180, Δλ=(lon2-lon1)*Math.PI/180;
+    const a=Math.sin(Δφ/2)*Math.sin(Δφ/2)+Math.cos(φ1)*Math.cos(φ2)*Math.sin(Δλ/2)*Math.sin(Δλ/2);
+    return R*2*Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
   }
-});
 
-dustinCall.addEventListener('click', () => {
-  dustinCall.style.display = 'none';
-  // play intro audio
-  audioIntro.play().catch(()=>{ /* ignore */ });
-  showMsg('Ligação de Dustin recebida');
-
-  // set mission 1 and start nav
-  currentMission = 1;
-  startGPS();
-  arrowHud.style.display = 'flex';
-
-  // request camera permission via A-Frame / AR frameworks
-  const scene = document.querySelector('a-scene');
-  try { scene.enterVR(); } catch(e){}
-});
-
-/* -----------------------
-   GEO & AR NAVIGATION
-   ----------------------- */
-// Haversine distance (meters)
-function distanceMeters(lat1, lon1, lat2, lon2) {
-  function toRad(v){return v*Math.PI/180;}
-  const R = 6371000;
-  const dLat = toRad(lat2-lat1);
-  const dLon = toRad(lon2-lon1);
-  const a = Math.sin(dLat/2)*Math.sin(dLat/2) + Math.cos(toRad(lat1))*Math.cos(toRad(lat2))*Math.sin(dLon/2)*Math.sin(dLon/2);
-  const c = 2*Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-  return R*c;
-}
-function bearingTo(lat1, lon1, lat2, lon2) {
-  function toRad(v){return v*Math.PI/180;}
-  function toDeg(v){return v*180/Math.PI;}
-  const y = Math.sin(toRad(lon2-lon1))*Math.cos(toRad(lat2));
-  const x = Math.cos(toRad(lat1))*Math.sin(toRad(lat2)) - Math.sin(toRad(lat1))*Math.cos(toRad(lat2))*Math.cos(toRad(lon2-lon1));
-  let brng = toDeg(Math.atan2(y,x));
-  brng = (brng+360)%360;
-  return brng;
-}
-window.addEventListener('deviceorientation', (ev)=>{
-  if (ev && ev.alpha !== null) {
-    // alpha is device rotation around Z (0..360)
-    deviceHeading = ev.webkitCompassHeading || (360 - ev.alpha); // adjust for some devices
-  }
-});
-
-function startGPS() {
-  if (!navigator.geolocation) { alert('Geolocalização não suportada'); return; }
-  watchId = navigator.geolocation.watchPosition(pos => {
-    lastPos = pos.coords;
-    handlePositionUpdate(pos.coords);
-  }, err => {
-    console.warn('geo err', err);
-  }, {enableHighAccuracy:true, maximumAge:1000, timeout:10000});
-}
-
-function updateArrowTo(targetLat, targetLon) {
-  if (!lastPos) return;
-  const brng = bearingTo(lastPos.latitude, lastPos.longitude, targetLat, targetLon);
-  const effective = brng - deviceHeading;
-  arrowSvg.style.transform = `rotate(${effective}deg)`;
-  const d = Math.round(distanceMeters(lastPos.latitude, lastPos.longitude, targetLat, targetLon));
-  distanceText.innerText = `${d} m`;
-}
-
-function handlePositionUpdate(coords) {
-  if (currentMission === 0) return;
-  const mission = MISSIONS[currentMission];
-  if (!mission) return;
-  const d = distanceMeters(coords.latitude, coords.longitude, mission.lat, mission.lon);
-  if (d <= mission.radius) {
-    arrowHud.style.display = 'none';
-    if (!geofenceTriggered[currentMission]) {
-      geofenceTriggered[currentMission] = true;
-      if (navigator.vibrate) navigator.vibrate([180,80,180]);
-      onEnterMissionArea(currentMission);
-    }
-  } else {
-    arrowHud.style.display = 'flex';
-    updateArrowTo(mission.lat, mission.lon);
-    // if left area and mission not complete
-    if (geofenceTriggered[currentMission]) {
-      geofenceTriggered[currentMission] = false;
-      showMsg('Você se afastou — seta retornada para guiar você.');
-    }
-  }
-}
-
-/* -----------------------
-   MISSION HANDLERS (1..7)
-   ----------------------- */
-function onEnterMissionArea(id) {
-  showMsg(`Você está próximo: ${MISSIONS[id].name}`, 4500);
-  switch(id) {
-    case 1:
-      // spawn bicicleta model (visible)
-      bicicletaEl.setAttribute('visible','true');
-      bicicletaEl.classList.add('collectable');
-      showMsg('Bicicleta do Will apareceu. Aponte a câmera e toque nela para coletar.');
-      break;
-    case 2:
-      // instruct to point to marker (hiro or MindAR) to show gif
-      showMsg('Aponte para o marcador na parede (hiro / MindAR) para ativar as luzes piscando.');
-      break;
-    case 3:
-      // arrival after fleeing - simply play audio and set next target
-      audio3.play().catch(()=>{});
-      showMsg('Fugiu do Demogorgon — siga a seta até a loja.');
-      setTimeout(()=> nextMission(), 2200);
-      break;
-    case 4:
-      // show store items
-      storeTaco.setAttribute('visible','true'); storeGas.setAttribute('visible','true');
-      showMsg('Encontre e toque nos itens: taco e gasolina.');
-      break;
-    case 5:
-      showMsg('Aponte para o marcador no laboratório para abrir o portal.');
-      break;
-    case 6:
-      demogorgonEl.setAttribute('visible','true');
-      demogorgonEl.dataset.hp = 3;
-      showMsg('Demogorgon apareceu! Toque 3x para derrotá-lo.');
-      break;
-    case 7:
-      willEl.setAttribute('visible','true');
-      showMsg('Will está aqui! Toque para resgatá-lo.');
-      break;
-  }
-}
-
-/* -----------------------
-   CLICK / TOUCH INTERACTIONS
-   ----------------------- */
-function wireInteractions() {
-  // bicicleta click
-  bicicletaEl.addEventListener('click', () => {
-    if (currentMission === 1) {
-      bicicletaEl.setAttribute('visible','false');
-      audio1.play().catch(()=>{});
-      showMsg('Bicicleta coletada — vá para a Casa do Will.');
-      nextMission();
+  bicicleta.addEventListener('click', ()=>{
+    if (currentMission===1){
+      bicicleta.setAttribute('visible','false');
+      showMsg('Missão concluída! (implementar próxima etapa...)');
     }
   });
 
-  // marker detection (MindAR)
-  const mindPlane = document.getElementById('mindPlane');
-  // MindAR emits events when target is found/lost via A-Frame
-  document.querySelectorAll('[mindar-image-target]').forEach(el=>{
-    el.addEventListener('targetFound', ()=> {
-      // when found, handle depending on current mission
-      if (currentMission === 2) {
-        // show lights gif and play audio
-        mindPlane.setAttribute('material','src: #luzesGif');
-        audio2.play().catch(()=>{});
-        showMsg('Luzes ativadas! Fuja agora!');
-        setTimeout(()=> nextMission(), 1500);
-      } else if (currentMission === 5) {
-        mindPlane.setAttribute('material','src: #portalGif');
-        // enter inverted effect, play audio4
-        enterUpsideDown();
-        audio4.play().catch(()=>{});
-        setTimeout(()=> nextMission(), 1800);
-      }
-    });
+  window.addEventListener('deviceorientation', e=>{
+    if (e.alpha!=null){ heading = 360 - e.alpha; arrowSvg.style.transform = `rotate(${heading}deg)`; }
   });
-
-  // AR.js marker hiro (fallback)
-  const hiro = document.getElementById('hiroMarker');
-  if (hiro) {
-    hiro.addEventListener('markerFound', ()=> {
-      if (currentMission === 2) {
-        document.getElementById('hiroPlane').setAttribute('visible','true');
-        audio2.play().catch(()=>{});
-        showMsg('Luzes piscando! Fuja agora!');
-        setTimeout(()=> nextMission(), 1500);
-      } else if (currentMission === 5) {
-        document.getElementById('hiroPlane').setAttribute('material','src: #portalGif');
-        enterUpsideDown();
-        audio4.play().catch(()=>{});
-        setTimeout(()=> nextMission(), 1800);
-      }
-    });
-    hiro.addEventListener('markerLost', ()=> {
-      document.getElementById('hiroPlane').setAttribute('visible','false');
-    });
-  }
-
-  // store items click
-  storeTaco.addEventListener('click', ()=> {
-    if (currentMission===4 && !storeCollected.taco) {
-      storeCollected.taco = true; storeTaco.setAttribute('visible','false'); showMsg('Taco coletado');
-      checkStoreCollected();
-    }
-  });
-  storeGas.addEventListener('click', ()=> {
-    if (currentMission===4 && !storeCollected.gas) {
-      storeCollected.gas = true; storeGas.setAttribute('visible','false'); showMsg('Gasolina coletada');
-      checkStoreCollected();
-    }
-  });
-  function checkStoreCollected(){
-    if (storeCollected.taco && storeCollected.gas) {
-      audio4.play().catch(()=>{});
-      showMsg('Itens coletados! Vá ao laboratório.');
-      setTimeout(()=> nextMission(), 1200);
-    }
-  }
-
-  // demogorgon clicks
-  demogorgonEl.addEventListener('click', ()=> {
-    if (currentMission===6) {
-      let hp = Number(demogorgonEl.dataset.hp || 3);
-      hp = hp - 1; demogorgonEl.dataset.hp = hp;
-      showMsg(`Acertou! Restam ${hp}`);
-      if (hp <= 0) {
-        demogorgonEl.setAttribute('visible','false'); showMsg('Demogorgon derrotado!');
-        nextMission();
-      }
-    }
-  });
-
-  // will click
-  willEl.addEventListener('click', ()=> {
-    if (currentMission===7) {
-      willEl.setAttribute('visible','false');
-      showMsg('Will resgatado — missão finalizada!', 8000);
-      finishGame();
-    }
-  });
-}
-wireInteractions();
-
-/* -----------------------
-   Helper: enter upside-down visual
-   ----------------------- */
-function enterUpsideDown() {
-  // simple overlay + CSS tint
-  if (!document.getElementById('invertOverlay')) {
-    const ov = document.createElement('div');
-    ov.id = 'invertOverlay';
-    ov.style.position='fixed'; ov.style.inset='0'; ov.style.pointerEvents='none';
-    ov.style.zIndex='950'; ov.style.mixBlendMode='screen';
-    ov.style.background='radial-gradient(rgba(0,255,120,0.04), transparent 30%)';
-    document.body.appendChild(ov);
-    setTimeout(()=> ov.remove(), 25000);
-  }
-}
-
-/* -----------------------
-   Mission progression
-   ----------------------- */
-function nextMission() {
-  currentMission++;
-  if (currentMission > Object.keys(MISSIONS).length) currentMission = Object.keys(MISSIONS).length;
-  showMsg('Próxima missão: ' + MISSIONS[currentMission].name, 4000);
-  // play mission-specific audio where needed
-  if (currentMission === 3) {
-    audio3.play().catch(()=>{});
-  }
-  // ensure arrow is visible to guide
-  document.getElementById('arrowHud').style.display = 'flex';
-}
-
-function finishGame() {
-  if (watchId !== null) navigator.geolocation.clearWatch(watchId);
-  document.getElementById('arrowHud').style.display = 'none';
-  showMsg('Parabéns — Aventura concluída!', 7000);
-}
-
-/* -----------------------
-   Utility: attempt to re-orient arrow on mount
-   ----------------------- */
-setInterval(()=> {
-  if (lastPos && currentMission>0) updateArrowTo(MISSIONS[currentMission].lat, MISSIONS[currentMission].lon);
-}, 800);
-
-/* -----------------------
-   Small console notes for debugging
-   ----------------------- */
-console.log('Index loaded — assets base:', ASSET_BASE);
-console.log('MindAR target expected at:', `${ASSET_BASE}/assets/mind/targets.mind`);
 </script>
-
 </body>
 </html>
