@@ -1,577 +1,167 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <title>Stranger Things - AR (Prototype)</title>
-
-  <!-- A-Frame -->
-  <script src="https://unpkg.com/aframe@1.4.0/dist/aframe.min.js"></script>
-  <!-- AR.js (A-Frame integration) -->
-  <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
-  <style>
-    :root{--bg:#0b0f13;--accent:#e11d48;--muted:#94a3b8;--panel:#0f1724}
-    html,body{height:100%;margin:0;background:linear-gradient(180deg,#000814,#001122);color:#fff;font-family:Inter,system-ui,Segoe UI,Roboto,Arial}
-    #loading {position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;background:linear-gradient(180deg, rgba(0,0,0,0.85), rgba(0,0,0,0.6));z-index:9999}
-    #logo{width:320px;max-width:60%}
-    #progressBar{width:320px;max-width:80%;height:14px;background:#0b1220;border-radius:999px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.6)}
-    #progressFill{height:100%;width:0%;background:linear-gradient(90deg,#f97316,#f43f5e)}
-    #startBtn{padding:10px 22px;border-radius:8px;border:0;background:#ef4444;color:#fff;font-weight:600;cursor:pointer;display:none}
-    #dustin-call{position:fixed;inset:10% auto auto 50%;transform:translateX(-50%);z-index:999;display:none}
-    #dustin-call img{width:220px;border-radius:10px;box-shadow:0 8px 30px rgba(0,0,0,0.5)}
-    #arrowHud{position:fixed;right:18px;bottom:18px;width:110px;height:110px;border-radius:999px;background:rgba(10,14,20,0.6);backdrop-filter: blur(6px);display:flex;align-items:center;justify-content:center;flex-direction:column;z-index:998}
-    #arrowHud svg{width:64px;height:64px;transform-origin:center center;transition:transform 200ms linear}
-    #distanceText{font-size:12px;color:var(--muted);margin-top:6px}
-    #message {position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:var(--panel);padding:10px 14px;border-radius:10px;z-index:999;color:#e2e8f0;display:none}
-    a {color:#93c5fd}
-    /* small note box */
-    #note {position:fixed;left:12px;top:12px;background:rgba(0,0,0,0.4);padding:8px 10px;border-radius:8px;font-size:13px;color:var(--muted);z-index:999}
-  </style>
+<meta charset="UTF-8">
+<title>Stranger Things: Pedra Branca Invertida</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+/* Estilo geral */
+body, html {
+  margin: 0;
+  padding: 0;
+  background: black;
+  color: white;
+  font-family: Arial, sans-serif;
+  overflow: hidden;
+}
+#loading-screen {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  background: black;
+}
+#loading-bar {
+  width: 80%;
+  height: 20px;
+  background: #333;
+  margin-top: 20px;
+  border-radius: 10px;
+  overflow: hidden;
+}
+#loading-fill {
+  height: 100%;
+  width: 0;
+  background: red;
+  transition: width 0.3s;
+}
+#start-btn {
+  padding: 10px 20px;
+  margin-top: 20px;
+  font-size: 18px;
+  background: red;
+  border: none;
+  color: white;
+  cursor: pointer;
+  display: none;
+}
+#call-screen {
+  display: none;
+  text-align: center;
+  padding-top: 20px;
+}
+#compass {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 120px;
+  height: 120px;
+}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/aframe@1.5.0/dist/aframe.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
 </head>
 <body>
-  <div id="loading">
-    <img id="logo" src="assets/img/stranger-things-logo.png" alt="logo">
-    <div id="loadingText">Carregando...</div>
-    <div id="progressBar"><div id="progressFill"></div></div>
-    <button id="startBtn">Iniciar o Jogo</button>
-  </div>
 
-  <div id="note">Hospede no GitHub Pages (HTTPS). Para testes no PC: permita a webcam. No celular permita localização, câmera e orientação.</div>
+<!-- Tela de carregamento -->
+<div id="loading-screen">
+  <img src="https://upload.wikimedia.org/wikipedia/commons/3/38/Stranger_Things_logo.png" width="300">
+  <div id="loading-bar"><div id="loading-fill"></div></div>
+  <button id="start-btn">Iniciar Jogo</button>
+</div>
 
-  <div id="dustin-call" role="button" aria-label="Atender ligação do Dustin">
-    <img src="assets/img/dustin-call.png" alt="Dustin call" id="dustinImg">
-  </div>
+<!-- Tela de ligação -->
+<div id="call-screen">
+  <h2>📞 Dustin está ligando...</h2>
+  <audio id="dustin-audio" src="https://cdn.pixabay.com/download/audio/2022/03/15/audio_2b07d58d14.mp3" preload="auto"></audio>
+</div>
 
-  <div id="arrowHud" style="display:none;">
-    <svg viewBox="0 0 24 24" id="arrowSvg">
-      <path d="M12 2 L15 10 H13 V22 H11 V10 H9 L12 2 Z" fill="#fff"/>
-    </svg>
-    <div id="distanceText">-- m</div>
-  </div>
+<!-- Bússola -->
+<svg id="compass" viewBox="0 0 100 100">
+  <circle cx="50" cy="50" r="48" stroke="white" stroke-width="2" fill="none"/>
+  <line id="needle" x1="50" y1="50" x2="50" y2="10" stroke="red" stroke-width="3"/>
+</svg>
 
-  <div id="message"></div>
-
-  <!-- A-Frame scene with AR.js -->
-  <a-scene
-    vr-mode-ui="enabled: false"
-    embedded
-    arjs="sourceType: webcam;debugUIEnabled: false;"
-    renderer="logarithmicDepthBuffer: true;antialias: true;">
-    <!-- Camera -->
-    <a-entity camera look-controls id="cameraRig"></a-entity>
-
-    <!-- Marker 'hiro' for image interactions (Casa do Will & Laboratório) -->
-    <a-marker preset="hiro" id="hiroMarker">
-      <!-- Here we show either the gif as a plane or the portal effect -->
-      <a-plane id="hiroPlane" position="0 0 0" rotation="-90 0 0" width="1.6" height="0.9" material="shader: flat; src: #gifTexture; transparent: true;"></a-plane>
-    </a-marker>
-
-    <!-- Assets -->
-    <a-assets>
-      <audio id="audioIntro" src="assets/audio/dustin-intro.mp3"></audio>
-      <audio id="audio1" src="assets/audio/dustin-missao-1-completa.mp3"></audio>
-      <audio id="audio2" src="assets/audio/dustin-missao-2-completa.mp3"></audio>
-      <audio id="audio3" src="assets/audio/dustin-missao-3-completa.mp3"></audio>
-      <audio id="audio4" src="assets/audio/dustin-missao-4-completa.mp3"></audio>
-
-      <img id="gifTexture" src="assets/img/luzes-piscando.gif">
-      <img id="portalGif" src="assets/gif/portal.gif">
-      <!-- Models -->
-      <a-asset-item id="bicicletaModel" src="assets/models/bicicleta-will.glb"></a-asset-item>
-      <a-asset-item id="demogorgonModel" src="assets/models/demogorgon_animated.glb"></a-asset-item>
-      <a-asset-item id="willModel" src="assets/models/will_byers.glb"></a-asset-item>
-      <!-- small items as images to present on AR plane -->
-      <img id="tacoImg" src="assets/img/taco.png">
-      <img id="gasImg" src="assets/img/gasolina.png">
-    </a-assets>
-
-    <!-- Invisible placeholder entities to host gltf models when in AR world -->
-    <a-entity id="bicicletaEntity" gltf-model="#bicicletaModel" scale="0.6 0.6 0.6" visible="false"></a-entity>
-    <a-entity id="demogorgonEntity" gltf-model="#demogorgonModel" scale="0.8 0.8 0.8" visible="false"></a-entity>
-    <a-entity id="willEntity" gltf-model="#willModel" scale="0.8 0.8 0.8" visible="false"></a-entity>
-
-    <!-- A simple plane that will show taco/gas images in AR at store location -->
-    <a-plane id="storeTaco" visible="false" material="shader:flat; src: #tacoImg" width="0.6" height="0.6" position="0 0 -1"></a-plane>
-    <a-plane id="storeGas" visible="false" material="shader:flat; src: #gasImg" width="0.6" height="0.6" position="0 0 -1"></a-plane>
-
-  </a-scene>
+<!-- Cena AR -->
+<a-scene mindar-image="imageTargetSrc: https://raw.githubusercontent.com/MindAR-js/aframe-examples/master/assets/card-example/card.mind;"
+         vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false">
+  <a-assets>
+    <a-asset-item id="bikeModel" src="https://modelviewer.dev/shared-assets/models/Astronaut.glb"></a-asset-item>
+  </a-assets>
+  <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+  <a-entity mindar-image-target="targetIndex: 0">
+    <a-gltf-model src="#bikeModel" scale="0.5 0.5 0.5" position="0 -0.25 0"></a-gltf-model>
+  </a-entity>
+</a-scene>
 
 <script>
-/*
-  GAME LOGIC
-  - Preload assets (progress)
-  - Start sequence: Dustin call -> play audio -> enable camera/AR -> show GPS arrow
-  - Missions flow with proximity checks
-  - hiro marker interactions are handled with markerFound events
-*/
-
-const ASSETS = [
-  'assets/img/stranger-things-logo.png',
-  'assets/img/dustin-call.png',
-  'assets/audio/dustin-intro.mp3',
-  'assets/audio/dustin-missao-1-completa.mp3',
-  'assets/audio/dustin-missao-2-completa.mp3',
-  'assets/audio/dustin-missao-3-completa.mp3',
-  'assets/audio/dustin-missao-4-completa.mp3',
-  'assets/models/bicicleta-will.glb',
-  'assets/models/demogorgon_animated.glb',
-  'assets/models/will_byers.glb',
-  'assets/img/luzes-piscando.gif',
-  'assets/gif/portal.gif',
-  'assets/img/taco.png',
-  'assets/img/gasolina.png'
-];
-
-// Mission coordinates
-const MISSIONS = {
-  1: {name:"Floresta das Trevas", lat:-27.63985135643477, lon:-48.66777779450669, radius: 10},
-  2: {name:"Casa do Will", lat:-27.64018223044791, lon:-48.66796420763507, radius: 20},
-  3: {name:"Fuga Demogorgon", lat:-27.63939989306851, lon:-48.66739759100892, radius: 12},
-  4: {name:"Loja Melvald's", lat:-27.64018876475326, lon:-48.667940067755126, radius: 12},
-  5: {name:"Laboratório Hawkins", lat:-27.63948543364662, lon:-48.66733120633911, radius: 12},
-  6: {name:"Encontro Demogorgon", lat:-27.63980145794119, lon:-48.667683246669554, radius: 12},
-  7: {name:"Encontro Will", lat:-27.639195545822158, lon:-48.66734595890275, radius: 12}
-};
-
-let currentMission = 0;
-let assetsLoaded = 0;
-let assetTotal = ASSETS.length;
-let progressFill = document.getElementById('progressFill');
-let loadingText = document.getElementById('loadingText');
-let startBtn = document.getElementById('startBtn');
-let dustinCall = document.getElementById('dustin-call');
-let distText = document.getElementById('distanceText');
-let arrowHud = document.getElementById('arrowHud');
-let arrowSvg = document.getElementById('arrowSvg');
-let messageBox = document.getElementById('message');
-let hiroPlane = document.getElementById('hiroPlane');
-
-const audioIntro = document.getElementById('audioIntro');
-const audio1 = document.getElementById('audio1');
-const audio2 = document.getElementById('audio2');
-const audio3 = document.getElementById('audio3');
-const audio4 = document.getElementById('audio4');
-
-// Register service worker to enable offline caching
+// ===== SERVICE WORKER EMBUTIDO =====
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('sw.js').catch(err => console.warn('SW failed', err));
-}
-
-// Preload assets (simple fetch to warm cache and update progress)
-async function preloadAssets() {
-  for (let i=0;i<ASSETS.length;i++){
-    try {
-      await fetch(ASSETS[i], {mode:'no-cors'}).catch(()=>null); // no-cors to avoid CORS issues when local
-    } catch(e){}
-    assetsLoaded++;
-    let pct = Math.round((assetsLoaded/assetTotal)*100);
-    progressFill.style.width = pct + '%';
-    loadingText.innerText = `Carregando... ${pct}%`;
-  }
-  loadingText.innerText = "Pronto!";
-  startBtn.style.display = 'inline-block';
-}
-
-// Utility: show message
-function showMessage(txt, ms=3500){
-  messageBox.innerText = txt;
-  messageBox.style.display = 'block';
-  clearTimeout(showMessage._t);
-  showMessage._t = setTimeout(()=> messageBox.style.display='none', ms);
-}
-
-// Haversine distance (meters)
-function distanceMeters(lat1, lon1, lat2, lon2) {
-  function toRad(v){return v*Math.PI/180;}
-  const R = 6371000;
-  const dLat = toRad(lat2-lat1);
-  const dLon = toRad(lon2-lon1);
-  const a = Math.sin(dLat/2)*Math.sin(dLat/2) + Math.cos(toRad(lat1))*Math.cos(toRad(lat2))*Math.sin(dLon/2)*Math.sin(dLon/2);
-  const c = 2*Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-  return R*c;
-}
-
-// Bearing (degrees) from current pos to target
-function bearingTo(lat1, lon1, lat2, lon2) {
-  function toRad(v){return v*Math.PI/180;}
-  function toDeg(v){return v*180/Math.PI;}
-  const y = Math.sin(toRad(lon2-lon1))*Math.cos(toRad(lat2));
-  const x = Math.cos(toRad(lat1))*Math.sin(toRad(lat2)) - Math.sin(toRad(lat1))*Math.cos(toRad(lat2))*Math.cos(toRad(lon2-lon1));
-  let brng = toDeg(Math.atan2(y,x));
-  brng = (brng + 360) % 360;
-  return brng;
-}
-
-// Update arrow rotation based on device heading and bearing
-let deviceHeading = 0;
-if (window.DeviceOrientationEvent && typeof DeviceOrientationEvent.requestPermission === 'function') {
-  // iOS 13+ requires permission
-  // we'll ask permission on start flow if needed
-}
-window.addEventListener('deviceorientationabsolute' in window ? 'deviceorientationabsolute' : 'deviceorientation', (ev) => {
-  // alpha (compass) is ev.alpha when absolute
-  if (ev.absolute === true || ev.webkitCompassHeading !== undefined || ev.alpha !== null) {
-    if (ev.webkitCompassHeading) deviceHeading = ev.webkitCompassHeading;
-    else if (ev.alpha !== null) deviceHeading = ev.alpha;
-  }
-});
-
-// Game state
-let watchId = null;
-let lastPos = null;
-let arrowVisible = false;
-let geofenceTriggered = {};
-
-// Start the GPS watch and arrow updates
-function startGPS() {
-  if (!navigator.geolocation) {
-    alert('Geolocalização não disponível no seu navegador.');
-    return;
-  }
-  // high accuracy might drain battery; user tests needed
-  watchId = navigator.geolocation.watchPosition(pos=>{
-    lastPos = pos.coords;
-    handlePositionUpdate(pos.coords);
-  },err=>{
-    console.warn('geo err',err);
-  },{
-    enableHighAccuracy:true, maximumAge:1000, timeout:10000
-  });
-}
-
-// rotate the arrow to point to bearing
-function updateArrowTo(targetLat, targetLon) {
-  if (!lastPos) return;
-  const brng = bearingTo(lastPos.latitude, lastPos.longitude, targetLat, targetLon);
-  const effective = brng - deviceHeading;
-  arrowSvg.style.transform = `rotate(${effective}deg)`;
-  const d = Math.round(distanceMeters(lastPos.latitude, lastPos.longitude, targetLat, targetLon));
-  distText.innerText = `${d} m`;
-}
-
-// handle proximity for current mission
-function handlePositionUpdate(coords) {
-  if (currentMission === 0) return;
-  const mission = MISSIONS[currentMission];
-  if (!mission) return;
-  const d = distanceMeters(coords.latitude, coords.longitude, mission.lat, mission.lon);
-  // update arrow display & rotate
-  if (d <= mission.radius) {
-    // arrived
-    arrowHud.style.display = 'none';
-    // vibrate 2x
-    if (navigator.vibrate) navigator.vibrate([180, 80, 180]);
-    if (!geofenceTriggered[currentMission]) {
-      geofenceTriggered[currentMission] = true;
-      onEnterMissionArea(currentMission);
-    }
-  } else {
-    // not there
-    arrowHud.style.display = 'flex';
-    updateArrowTo(mission.lat, mission.lon);
-    // if earlier we were inside and now left, reset flag so arrow returns
-    if (geofenceTriggered[currentMission]) {
-      geofenceTriggered[currentMission] = false;
-      showMessage('Você se afastou — retornando a seta de navegação.');
-    }
-  }
-}
-
-// Mission arrival handler
-function onEnterMissionArea(missionId) {
-  console.log('Entered mission area', missionId);
-  switch(missionId) {
-    case 1:
-      // show bicicleta in AR scene in front of camera (world position)
-      const bici = document.getElementById('bicicletaEntity');
-      bici.setAttribute('position','0 -0.5 -1.3');
-      bici.setAttribute('visible','true');
-      showMessage('Bicicleta detectada. Aponte a câmera e toque nela para coletar.');
-      // attach click listener on the model — A-Frame: use raycaster from camera
-      bici.classList.add('collectable'); // marker for click handler
-      break;
-    case 2:
-      showMessage('Aponte para o marcador HIRO para ativar as luzes.');
-      // the hiro marker plane already has texture; we rely on marker detection events
-      break;
-    case 3:
-      // nothing special; arrival triggers next audio in flow (we play on mission progression)
-      break;
-    case 4:
-      // show small items planes visible
-      document.getElementById('storeTaco').setAttribute('visible','true');
-      document.getElementById('storeGas').setAttribute('visible','true');
-      showMessage('Aponte e toque nos itens para coletar (taco / gasolina).');
-      break;
-    case 5:
-      showMessage('Aponte para o marcador HIRO no laboratório para abrir o portal.');
-      break;
-    case 6:
-      // spawn demogorgon model
-      const dem = document.getElementById('demogorgonEntity');
-      dem.setAttribute('position','0 -0.6 -1.2');
-      dem.setAttribute('visible','true');
-      dem.classList.add('enemy');
-      dem.dataset.hp = 3;
-      showMessage('Derrote o Demogorgon! Toque 3x sobre ele.');
-      break;
-    case 7:
-      const w = document.getElementById('willEntity');
-      w.setAttribute('position','0 -0.6 -1.2');
-      w.setAttribute('visible','true');
-      showMessage('Encontre o Will e toque nele para finalizar a missão.');
-      break;
-  }
-}
-
-// Click handling in scene (raycasting)
-AFRAME.registerComponent('global-click-handler',{
-  init: function(){
-    const sceneEl = this.el;
-    sceneEl.addEventListener('click', (evt)=>{
-      // get clicked entity from event
-      let el = evt.target;
-      // sometimes evt.target is canvas, use cursor intersection if any
-      // We'll check any entity with 'collectable' or 'enemy' class by raycast.
-      const raycaster = sceneEl.querySelector('[camera]').components.raycaster;
+  const swCode = `
+    self.addEventListener('install', e => {
+      e.waitUntil(caches.open('st-ar-v1').then(cache => {
+        return cache.addAll(['.']);
+      }));
     });
-    // Using cursor approach: add cursor to camera
-    const cam = document.querySelector('[camera]');
-    if (!cam.querySelector('a-cursor')) {
-      const cursor = document.createElement('a-entity');
-      cursor.setAttribute('cursor','fuse:false;rayOrigin:mouse');
-      cursor.setAttribute('raycaster','objects:.collectable, .enemy, .collectableStore');
-      cam.appendChild(cursor);
-    }
-
-    // Listen to clicks on specific entities
-    const bici = document.getElementById('bicicletaEntity');
-    bici.addEventListener('click', ()=>{
-      if (currentMission === 1) {
-        // collect
-        bici.setAttribute('visible','false');
-        showMessage('Pista coletada: Bicicleta do Will.');
-        audio1.play();
-        nextMission(); // proceed
-      }
+    self.addEventListener('fetch', e => {
+      e.respondWith(caches.match(e.request).then(resp => resp || fetch(e.request)));
     });
-
-    // store items
-    const taco = document.getElementById('storeTaco');
-    const gas = document.getElementById('storeGas');
-    let collected = {taco:false, gas:false};
-    taco.classList.add('collectableStore');
-    gas.classList.add('collectableStore');
-    taco.addEventListener('click', ()=>{
-      if (currentMission === 4 && !collected.taco){
-        collected.taco = true;
-        taco.setAttribute('visible','false');
-        showMessage('Taco coletado.');
-        checkStoreCollect();
-      }
-    });
-    gas.addEventListener('click', ()=>{
-      if (currentMission === 4 && !collected.gas){
-        collected.gas = true;
-        gas.setAttribute('visible','false');
-        showMessage('Gasolina coletada.');
-        checkStoreCollect();
-      }
-    });
-    function checkStoreCollect(){
-      if (collected.taco && collected.gas) {
-        audio4.play();
-        showMessage('Itens coletados! Vá ao Laboratório.');
-        nextMission();
-      }
-    }
-
-    // demogorgon clicks
-    const dem = document.getElementById('demogorgonEntity');
-    dem.addEventListener('click', ()=>{
-      if (currentMission === 6) {
-        const hp = Number(dem.dataset.hp || 3);
-        dem.dataset.hp = hp - 1;
-        showMessage(`Você acertou! Restam ${hp-1}`);
-        if (hp-1 <= 0) {
-          dem.setAttribute('visible','false');
-          showMessage('Demogorgon derrotado!');
-          nextMission();
-        }
-      }
-    });
-
-    // will click
-    const will = document.getElementById('willEntity');
-    will.addEventListener('click', ()=>{
-      if (currentMission === 7) {
-        will.setAttribute('visible','false');
-        showMessage('Você resgatou o Will! Missão concluída.');
-        // end game
-        showEnd();
-      }
-    });
-  }
-});
-document.querySelector('a-scene').setAttribute('global-click-handler','');
-
-// Marker events: when hiro marker detected, show GIF or portal depending on mission
-const hiroMarker = document.getElementById('hiroMarker');
-hiroMarker.addEventListener('markerFound', () => {
-  console.log('hiro found', currentMission);
-  if (currentMission === 2) {
-    // show lights gif (already in plane texture)
-    hiroPlane.setAttribute('visible','true');
-    audio2.play();
-    // after audio instruct to run away and set next mission target
-    setTimeout(()=> {
-      showMessage('CORRA! Direção indicada.');
-      nextMission(); // moves to mission 3 (fuga)
-    }, 1200);
-  } else if (currentMission === 5) {
-    // portal gif
-    hiroPlane.setAttribute('material','src: #portalGif');
-    hiroPlane.setAttribute('visible','true');
-    // simulate "enter world inverted" via CSS overlay effect
-    enterUpsideDown();
-    audio4.play();
-    // after small delay proceed
-    setTimeout(()=> {
-      showMessage('Você entrou no Mundo Invertido! Vá para encontro com o Demogorgon.');
-      nextMission();
-    }, 2000);
-  }
-});
-hiroMarker.addEventListener('markerLost', () => {
-  hiroPlane.setAttribute('visible','false');
-});
-
-// enter upside-down effect (apply green-ish filter to body)
-function enterUpsideDown() {
-  document.body.style.background = 'linear-gradient(180deg,#082018,#00120a)';
-  // create simple particle overlay
-  if (!document.getElementById('invertOverlay')) {
-    const overlay = document.createElement('div');
-    overlay.id = 'invertOverlay';
-    overlay.style.position='fixed';
-    overlay.style.inset='0';
-    overlay.style.pointerEvents='none';
-    overlay.style.mixBlendMode='screen';
-    overlay.style.background='radial-gradient(rgba(0,255,150,0.05), transparent 40%)';
-    overlay.style.zIndex = '900';
-    document.body.appendChild(overlay);
-    setTimeout(()=> overlay.remove(), 20000);
-  }
-}
-
-// Advance to next mission and push to GitHub Pages as required by you (manual)
-function nextMission() {
-  currentMission++;
-  if (currentMission > Object.keys(MISSIONS).length) {
-    currentMission = Object.keys(MISSIONS).length;
-  }
-  const mission = MISSIONS[currentMission];
-  if (mission) {
-    showMessage(`Próxima missão: ${mission.name}`);
-    // Play audio per mission where specified
-    switch(currentMission) {
-      case 2: // after bici collected, audio1 already played
-        break;
-      case 3:
-        audio3.play();
-        break;
-    }
-  }
-  // ensure arrow shown toward mission
-  arrowHud.style.display = 'flex';
-  // if GPS active, immediate update will orient arrow
-}
-
-// end game
-function showEnd() {
-  showMessage('Parabéns! Você concluiu a aventura!', 8000);
-  // hide arrow
-  arrowHud.style.display = 'none';
-  // stop GPS watch
-  if (watchId !== null) navigator.geolocation.clearWatch(watchId);
-}
-
-// BUTTONS & START FLOW
-startBtn.addEventListener('click', async ()=>{
-  // show dustin call UI
-  document.getElementById('loading').style.display='none';
-  dustinCall.style.display = 'block';
-  // request device orientation permission if needed
-  try {
-    if (window.DeviceOrientationEvent && typeof DeviceOrientationEvent.requestPermission === 'function') {
-      const perm = await DeviceOrientationEvent.requestPermission().catch(()=>null);
-      // ignore result - orientation event listener added already
-    }
-  } catch(e){}
-});
-
-// clicking Dustin picture plays intro audio and starts GPS + mission 1
-dustinCall.addEventListener('click', ()=>{
-  dustinCall.style.display = 'none';
-  audioIntro.play();
-  showMessage('Ligação de Dustin recebida.');
-  // start mission 1
-  currentMission = 1;
-  // start GPS nav
-  startGPS();
-  // show arrow
-  arrowHud.style.display = 'flex';
-  // enable camera in A-Frame (AR.js will prompt)
-  const scene = document.querySelector('a-scene');
-  scene.enterVR(); // this triggers permission for camera in some browsers
-});
-
-// Preload then show start
-preloadAssets();
-
-// small helper: show sw-friendly message when deployed
-function registerServiceWorkerCache() {
-  if (!('serviceWorker' in navigator)) return;
-  // send message to SW to cache list
-  navigator.serviceWorker.ready.then(reg => {
-    if (reg.active) {
-      reg.active.postMessage({type:'CACHE_ASSETS', assets: ASSETS});
-    }
-  });
-}
-setTimeout(registerServiceWorkerCache, 2000);
-
-// Simple file: service worker generation - to be saved as sw.js in same repo.
-// We'll create it dynamically if possible via blob for demo, else instruct user to create file.
-const swCode = `
-// Service Worker (basic cache for offline)
-const CACHE_NAME = 'st-ar-game-v1';
-self.addEventListener('install', event => {
-  self.skipWaiting();
-});
-self.addEventListener('activate', event => {
-  event.waitUntil(self.clients.claim());
-});
-self.addEventListener('message', event => {
-  if (event.data && event.data.type === 'CACHE_ASSETS') {
-    caches.open(CACHE_NAME).then(cache => cache.addAll(event.data.assets.map(u => new Request(u, {mode:'no-cors'}))));
-  }
-});
-self.addEventListener('fetch', event => {
-  event.respondWith(
-    caches.match(event.request).then(resp => resp || fetch(event.request))
-  );
-});
-`;
-try {
-  // try to register an on-the-fly SW (will only work when hosted over HTTPS)
+  `;
   const blob = new Blob([swCode], {type: 'application/javascript'});
-  const swUrl = URL.createObjectURL(blob);
-  navigator.serviceWorker.register(swUrl).catch(e=>console.warn('SW inline reg failed', e));
-} catch(e){ console.warn('inline sw failed', e); }
+  const swURL = URL.createObjectURL(blob);
+  navigator.serviceWorker.register(swURL);
+}
 
-// FINAL NOTES visible in console
-console.log('Prototype ready. Place this index.html and assets/ in your GitHub Pages repo and test on mobile.');
+// ===== TELA DE CARREGAMENTO =====
+let progress = 0;
+const fill = document.getElementById('loading-fill');
+const startBtn = document.getElementById('start-btn');
+const loadingInterval = setInterval(() => {
+  progress += 10;
+  fill.style.width = progress + '%';
+  if (progress >= 100) {
+    clearInterval(loadingInterval);
+    startBtn.style.display = 'block';
+  }
+}, 200);
+
+startBtn.addEventListener('click', () => {
+  document.getElementById('loading-screen').style.display = 'none';
+  document.getElementById('call-screen').style.display = 'block';
+  document.getElementById('dustin-audio').play();
+});
+
+// ===== BÚSSOLA + GEOLOCALIZAÇÃO =====
+const targetLat = -27.62172576455045;
+const targetLon = -48.6799944586445;
+
+if (navigator.geolocation) {
+  navigator.geolocation.watchPosition(pos => {
+    const {latitude, longitude} = pos.coords;
+    const dist = getDistance(latitude, longitude, targetLat, targetLon);
+    if (dist < 0.01) {
+      if (navigator.vibrate) navigator.vibrate(500);
+      alert("Você chegou à Floresta das Trevas! Aponte a câmera para o marcador para encontrar a bicicleta do Will.");
+    }
+  });
+}
+
+window.addEventListener('deviceorientation', e => {
+  const needle = document.getElementById('needle');
+  if (e.absolute && e.alpha !== null) {
+    needle.setAttribute('transform', \`rotate(\${360 - e.alpha} 50 50)\`);
+  }
+});
+
+function getDistance(lat1, lon1, lat2, lon2) {
+  const R = 6371;
+  const dLat = (lat2-lat1) * Math.PI/180;
+  const dLon = (lon2-lon1) * Math.PI/180;
+  const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
+  return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)));
+}
 </script>
 
 </body>
