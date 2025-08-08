@@ -3,291 +3,165 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Jogo de Realidade Aumentada</title>
+    <title>Stranger Things AR Game</title>
+    <script src="https://aframe.io/releases/1.3.0/aframe.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/aframe/build/aframe-ar.js"></script>
     <style>
-        body {
-            margin: 0;
-            overflow: hidden;
+        body { margin: 0; overflow: hidden; }
+        #hud {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            color: white;
+            background: rgba(0,0,0,0.5);
+            padding: 8px 12px;
+            border-radius: 8px;
             font-family: Arial, sans-serif;
-        }
-        
-        #ar-container {
-            position: relative;
-            width: 100vw;
-            height: 100vh;
-        }
-        
-        #compass {
-            position: fixed;
-            bottom: 30px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 120px;
-            height: 120px;
-            background: rgba(0, 0, 0, 0.7);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 1000;
-            transition: opacity 0.3s ease;
-        }
-        
-        #compass-arrow {
-            width: 60%;
-            height: 60%;
-            background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><polygon points="50,10 90,90 50,70 10,90" fill="red" /></svg>') no-repeat center;
-            background-size: contain;
-            transform-origin: center;
-            transition: transform 0.3s ease;
-        }
-        
-        #distance-indicator {
-            position: absolute;
-            bottom: 10px;
-            left: 50%;
-            transform: translateX(-50%);
-            color: white;
             font-size: 14px;
-            font-weight: bold;
-            text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
-        }
-        
-        #collect-message {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: rgba(0, 128, 0, 0.9);
-            color: white;
-            padding: 20px;
-            border-radius: 10px;
-            font-size: 18px;
-            display: none;
-            z-index: 2000;
-            text-align: center;
-        }
-        
-        .ar-object {
-            position: absolute;
-            width: 50px;
-            height: 50px;
-            background: rgba(255, 0, 0, 0.7);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-weight: bold;
-            cursor: pointer;
-            transform: translate(-50%, -50%);
         }
     </style>
 </head>
 <body>
-    <div id="ar-container">
-        <!-- Aqui você renderiza seus objetos GLB -->
-        <div id="ar-objects"></div>
-        
-        <!-- Bússola -->
-        <div id="compass">
-            <div id="compass-arrow"></div>
-            <div id="distance-indicator">0m</div>
-        </div>
-        
-        <!-- Mensagem de coleta -->
-        <div id="collect-message">
-            Objeto coletado! Próximo objetivo aparecendo...
-        </div>
-    </div>
 
-    <script>
-        // Configuração dos objetivos do jogo
-        const objectives = [
-            { id: 1, lat: -23.550520, lng: -46.633309, collected: false },
-            { id: 2, lat: -23.551000, lng: -46.633500, collected: false },
-            { id: 3, lat: -23.551500, lng: -46.634000, collected: false }
-        ];
-        
-        let currentObjectiveIndex = 0;
-        let userPosition = null;
-        let deviceOrientation = 0;
-        
-        // Elementos da UI
-        const compass = document.getElementById('compass');
-        const compassArrow = document.getElementById('compass-arrow');
-        const distanceIndicator = document.getElementById('distance-indicator');
-        const collectMessage = document.getElementById('collect-message');
-        const arObjectsContainer = document.getElementById('ar-objects');
-        
-        // Função para calcular distância entre dois pontos (em metros)
-        function calculateDistance(lat1, lon1, lat2, lon2) {
-            const R = 6371e3; // Raio da Terra em metros
-            const φ1 = lat1 * Math.PI/180;
-            const φ2 = lat2 * Math.PI/180;
-            const Δφ = (lat2-lat1) * Math.PI/180;
-            const Δλ = (lon2-lon1) * Math.PI/180;
+<div id="hud">Carregando...</div>
 
-            const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
-                      Math.cos(φ1) * Math.cos(φ2) *
-                      Math.sin(Δλ/2) * Math.sin(Δλ/2);
-            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+<a-scene embedded vr-mode-ui="enabled: false" renderer="colorManagement: true" arjs="sourceType: webcam; debugUIEnabled: false;">
+    <a-assets>
+        <a-asset-item id="bike-model" src="models/bike.glb"></a-asset-item>
+        <a-asset-item id="demogorgon-model" src="models/demogorgon.glb"></a-asset-item>
+        <a-asset-item id="walkie-model" src="models/walkie.glb"></a-asset-item>
+        <a-asset-item id="axe-model" src="models/axe.glb"></a-asset-item>
+        <a-asset-item id="alphabet-model" src="models/alphabet.glb"></a-asset-item>
+        <a-asset-item id="compass-model" src="models/compass.glb"></a-asset-item>
+        <a-asset-item id="light-model" src="models/light.glb"></a-asset-item>
+    </a-assets>
 
-            return R * c;
-        }
-        
-        // Função para calcular o ângulo (bearing) entre dois pontos
-        function calculateBearing(lat1, lon1, lat2, lon2) {
-            const φ1 = lat1 * Math.PI/180;
-            const φ2 = lat2 * Math.PI/180;
-            const Δλ = (lon2-lon1) * Math.PI/180;
+    <!-- Câmera do AR.js -->
+    <a-camera gps-camera rotation-reader></a-camera>
 
-            const y = Math.sin(Δλ) * Math.cos(φ2);
-            const x = Math.cos(φ1) * Math.sin(φ2) - 
-                      Math.sin(φ1) * Math.cos(φ2) * Math.cos(Δλ);
-            const θ = Math.atan2(y, x);
+    <!-- Seta direcional -->
+    <a-entity id="direction-arrow"
+              geometry="primitive: cone; radiusBottom: 0.05; radiusTop: 0; height: 0.2"
+              material="color: yellow; opacity: 0.85"
+              position="0 -0.3 -1"
+              rotation="0 0 0"
+              visible="false">
+    </a-entity>
+</a-scene>
 
-            return (θ * 180/Math.PI + 360) % 360;
-        }
-        
-        // Atualizar a bússola
-        function updateCompass() {
-            if (!userPosition || currentObjectiveIndex >= objectives.length) {
-                compass.style.display = 'none';
-                return;
-            }
-            
-            const currentObjective = objectives[currentObjectiveIndex];
-            const distance = calculateDistance(
-                userPosition.lat, userPosition.lng,
-                currentObjective.lat, currentObjective.lng
-            );
-            
-            // Esconde a bússola se estiver a menos de 9 metros
-            if (distance < 9) {
-                compass.style.opacity = '0';
-                setTimeout(() => {
-                    compass.style.display = 'none';
-                }, 300);
-                return;
-            }
-            
-            // Mostra a bússola e atualiza direção
-            compass.style.display = 'flex';
-            setTimeout(() => {
-                compass.style.opacity = '1';
-            }, 10);
-            
+<script>
+    const sceneEl = document.querySelector('a-scene');
+    const hud = document.getElementById('hud');
+
+    const objects = [
+        { id: 'bike', name: 'Bicicleta', lat: -23.561, lng: -46.656 },
+        { id: 'demogorgon', name: 'Demogorgon', lat: -23.562, lng: -46.657 },
+        { id: 'walkie', name: 'Walkie Talkie', lat: -23.563, lng: -46.658 },
+        { id: 'axe', name: 'Machado', lat: -23.564, lng: -46.659 },
+        { id: 'alphabet', name: 'Alfabeto', lat: -23.565, lng: -46.660 },
+        { id: 'compass', name: 'Bússola', lat: -23.566, lng: -46.661 },
+        { id: 'light', name: 'Luz', lat: -23.567, lng: -46.662 }
+    ];
+
+    let currentObjectIndex = 0;
+    let locationUnlocked = Array(objects.length).fill(false);
+    let currentLocation = { lat: null, lng: null };
+
+    const PROXIMITY_RADIUS = 10; // metros
+
+    // Calcula o rumo entre dois pontos GPS
+    function calculateBearing(lat1, lon1, lat2, lon2) {
+        const toRad = deg => deg * Math.PI / 180;
+        const toDeg = rad => rad * 180 / Math.PI;
+        const dLon = toRad(lon2 - lon1);
+        const y = Math.sin(dLon) * Math.cos(toRad(lat2));
+        const x = Math.cos(toRad(lat1)) * Math.sin(toRad(lat2)) -
+                  Math.sin(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.cos(dLon);
+        let brng = toDeg(Math.atan2(y, x));
+        return (brng + 360) % 360;
+    }
+
+    // Distância em metros entre dois pontos GPS
+    function getDistance(lat1, lon1, lat2, lon2) {
+        const R = 6371e3;
+        const toRad = deg => deg * Math.PI / 180;
+        const φ1 = toRad(lat1);
+        const φ2 = toRad(lat2);
+        const Δφ = toRad(lat2 - lat1);
+        const Δλ = toRad(lon2 - lon1);
+        const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
+                  Math.cos(φ1) * Math.cos(φ2) *
+                  Math.sin(Δλ/2) * Math.sin(Δλ/2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        return R * c;
+    }
+
+    function checkProximityToLocations() {
+        if (currentLocation.lat === null) return;
+
+        const currentObject = objects[currentObjectIndex];
+        const dist = getDistance(
+            currentLocation.lat, currentLocation.lng,
+            currentObject.lat, currentObject.lng
+        );
+
+        const arrow = document.getElementById('direction-arrow');
+
+        if (!locationUnlocked[currentObjectIndex]) {
             const bearing = calculateBearing(
-                userPosition.lat, userPosition.lng,
-                currentObjective.lat, currentObjective.lng
+                currentLocation.lat, currentLocation.lng,
+                currentObject.lat, currentObject.lng
             );
-            
-            // Ajusta a rotação com base na orientação do dispositivo
-            const relativeBearing = (bearing - deviceOrientation + 360) % 360;
-            compassArrow.style.transform = `rotate(${relativeBearing}deg)`;
-            
-            // Atualiza indicador de distância
-            distanceIndicator.textContent = `${Math.round(distance)}m`;
+
+            const cameraYaw = sceneEl.camera.el.object3D.rotation.y * (180 / Math.PI);
+            const relativeBearing = bearing - cameraYaw;
+
+            arrow.setAttribute('rotation', { x: -90, y: relativeBearing, z: 0 });
+            arrow.setAttribute('visible', true);
+
+            hud.textContent = `Próximo: ${currentObject.name} - Distância: ${dist.toFixed(1)}m`;
+        } else {
+            arrow.setAttribute('visible', false);
         }
-        
-        // Coletar objeto
-        function collectObject(objectId) {
-            const objective = objectives.find(obj => obj.id === objectId);
-            if (objective && !objective.collected) {
-                objective.collected = true;
-                
-                // Mostra mensagem de coleta
-                collectMessage.style.display = 'block';
-                setTimeout(() => {
-                    collectMessage.style.display = 'none';
-                }, 2000);
-                
-                // Remove o objeto visual
-                const element = document.getElementById(`obj-${objectId}`);
-                if (element) element.remove();
-                
-                // Avança para o próximo objetivo
-                currentObjectiveIndex++;
-                
-                // Força atualização da bússola
-                updateCompass();
-            }
+
+        if (dist <= PROXIMITY_RADIUS && !locationUnlocked[currentObjectIndex]) {
+            locationUnlocked[currentObjectIndex] = true;
+            hud.textContent = `${currentObject.name} desbloqueado!`;
+            spawnObject(currentObject.id);
         }
-        
-        // Renderizar objetos no mapa
-        function renderARObjects() {
-            arObjectsContainer.innerHTML = '';
-            
-            objectives.forEach(obj => {
-                if (!obj.collected) {
-                    const element = document.createElement('div');
-                    element.id = `obj-${obj.id}`;
-                    element.className = 'ar-object';
-                    element.textContent = obj.id;
-                    element.style.left = '50%';
-                    element.style.top = '50%';
-                    
-                    // Em um app real, você posicionaria baseado na posição geográfica
-                    // Aqui é apenas um exemplo visual
-                    element.onclick = () => collectObject(obj.id);
-                    
-                    arObjectsContainer.appendChild(element);
-                }
-            });
+    }
+
+    function spawnObject(objectId) {
+        let scaleValue = 1;
+        if (objectId === 'bike') scaleValue = 0.4;
+        if (objectId === 'demogorgon') scaleValue = 0.8;
+
+        const model = document.createElement('a-entity');
+        model.setAttribute('gltf-model', `#${objectId}-model`);
+        model.setAttribute('scale', `${scaleValue} ${scaleValue} ${scaleValue}`);
+        model.setAttribute('gps-entity-place', `latitude: ${currentLocation.lat}; longitude: ${currentLocation.lng}`);
+        model.setAttribute('animation-mixer', '');
+        sceneEl.appendChild(model);
+
+        currentObjectIndex++;
+        if (currentObjectIndex >= objects.length) {
+            hud.textContent = 'Parabéns! Você encontrou todos os itens!';
         }
-        
-        // Obter posição do usuário
-        function getUserPosition() {
-            if (navigator.geolocation) {
-                navigator.geolocation.watchPosition(
-                    position => {
-                        userPosition = {
-                            lat: position.coords.latitude,
-                            lng: position.coords.longitude
-                        };
-                        updateCompass();
-                    },
-                    error => {
-                        console.error("Erro ao obter localização:", error);
-                    },
-                    { enableHighAccuracy: true, maximumAge: 1000 }
-                );
-            }
-        }
-        
-        // Obter orientação do dispositivo
-        function getDeviceOrientation() {
-            if (window.DeviceOrientationEvent) {
-                window.addEventListener('deviceorientation', event => {
-                    deviceOrientation = event.alpha || 0;
-                    updateCompass();
-                });
-            }
-        }
-        
-        // Inicialização
-        function init() {
-            renderARObjects();
-            getUserPosition();
-            getDeviceOrientation();
-            
-            // Simulação de movimento para teste (remover em produção)
-            let testLat = -23.550000;
-            let testLng = -46.633000;
-            
-            setInterval(() => {
-                if (!userPosition) {
-                    testLat += 0.0001;
-                    testLng += 0.0001;
-                    userPosition = { lat: testLat, lng: testLng };
-                    updateCompass();
-                }
-            }, 1000);
-        }
-        
-        // Iniciar o jogo
-        init();
-    </script>
+    }
+
+    // GPS
+    if ('geolocation' in navigator) {
+        navigator.geolocation.watchPosition((pos) => {
+            currentLocation.lat = pos.coords.latitude;
+            currentLocation.lng = pos.coords.longitude;
+            checkProximityToLocations();
+        }, (err) => {
+            console.error(err);
+            hud.textContent = 'Erro ao obter localização';
+        }, { enableHighAccuracy: true, maximumAge: 0, timeout: 27000 });
+    } else {
+        hud.textContent = 'GPS não suportado';
+    }
+</script>
 </body>
 </html>
