@@ -1,73 +1,66 @@
-<!doctype html>
-<html lang="pt-BR">
+<!DOCTYPE html>
+<html>
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Stranger Things — Projeto AR</title>
-  <style>
-    :root { --bg:#0b0b0f; --panel:#121219; --accent:#e31b6d; color:#e6e6e6 }
-    html, body { height:100%; margin:0; font-family:Inter, system-ui, Arial, Helvetica, sans-serif; background:var(--bg); color:var(--accent); overflow:hidden; }
-    .center { display:flex; align-items:center; justify-content:center }
-    #loader { height:100vh; gap:12px; flex-direction:column; display:flex; padding:10px; box-sizing:border-box; }
-    #logo { max-width:200px; width:70%; height:auto; }
-    #progressWrap { width:90%; max-width:320px; background:#222; border-radius:10px; padding:4px }
-    #progress { height:12px; background:linear-gradient(90deg,var(--accent),#ff8fb8); width:0%; border-radius:6px }
-    #startBtn { padding:10px 14px; border-radius:10px; background:var(--accent); border:none; color:#fff; font-weight:700; cursor:pointer; font-size:14px; }
-    #callUi { position:fixed; inset:0; display:none; background:rgba(0,0,0,0.6); align-items:center; justify-content:center; padding:10px; box-sizing:border-box; }
-    #callCard { background:var(--panel); padding:12px; border-radius:10px; max-width:300px; width:100%; text-align:center; }
-    #callCard img { width:100px; height:100px; border-radius:8px; object-fit:cover }
-    #gameHud { position:fixed; bottom:10px; left:10px; right:10px; display:none; align-items:center; justify-content:space-between; font-size:12px; }
-    #compass { display:flex; align-items:center; gap:8px }
-    #arrow { width:40px; height:40px }
-    #distance { padding:4px 8px; background:#111; border-radius:8px }
-    .hidden { display:none }
-    a-scene { width:100%; height:100%; position:fixed; top:0; left:0; z-index:1; }
-    #message { position:fixed; top:8px; left:50%; transform:translateX(-50%); background:rgba(0,0,0,0.6); padding:6px 10px; border-radius:8px; font-size:12px; max-width:90%; text-align:center; }
-  </style>
-  <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
-  <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.1.7/dist/mindar-image.prod.js"></script>
-  <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Stranger Things AR Game</title>
+<style>
+  body { margin: 0; font-family: Arial, sans-serif; background: black; color: white; text-align: center; }
+  #loadingScreen { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; }
+  img { max-width: 90%; height: auto; }
+  #progressBar { width: 80%; height: 10px; background: gray; margin-top: 10px; }
+  #progress { width: 0; height: 100%; background: red; }
+  #startBtn { padding: 10px 20px; font-size: 18px; margin-top: 20px; background: red; border: none; color: white; }
+  #callScreen img { max-width: 60%; height: auto; }
+  #arrow { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 100px; height: 100px; z-index: 10; }
+</style>
 </head>
 <body>
-  <!-- Loader -->
-  <div id="loader" class="center">
-    <img id="logo" src="assets/img/stranger-things-logo.png" alt="Stranger Things" />
-    <div id="loadingText">Carregando...</div>
-    <div id="progressWrap"><div id="progress"></div></div>
-    <button id="startBtn" class="hidden">Iniciar o Jogo</button>
-    <div style="font-size:10px;opacity:0.7">Os assets serão armazenados no cache para uso offline.</div>
+<div id="loadingScreen">
+  <img src="assets/img/stranger-things-logo.png" alt="Stranger Things Logo">
+  <p>Carregando...</p>
+  <div id="progressBar"><div id="progress"></div></div>
+</div>
+<div id="game" style="display:none;">
+  <div id="callScreen">
+    <img src="assets/img/dustin.png" alt="Dustin" id="dustinImg">
   </div>
-  <!-- Call -->
-  <div id="callUi" class="center">
-    <div id="callCard">
-      <img id="dustinImg" src="assets/img/dustin.png" alt="Dustin" />
-      <h3 style="margin:8px 0; font-size:14px;">DUSTIN</h3>
-      <p id="callInstruction" style="font-size:12px;">Toque na imagem para ouvir a mensagem.</p>
-    </div>
-  </div>
-  <!-- HUD -->
-  <div id="gameHud" class="center">
-    <div id="compass" class="center">
-      <svg id="arrow" viewBox="0 0 24 24"><path d="M12 2 L19 21 L12 17 L5 21 Z" fill="white"/></svg>
-      <div id="distance">— m</div>
-    </div>
-    <div id="message" class="hidden"></div>
-  </div>
-  <!-- AR Scene -->
-  <a-scene vr-mode-ui="enabled: false" embedded arjs="sourceType: webcam; debugUIEnabled: false; trackingMethod: best;">
-    <a-assets>
-      <a-asset-item id="bicicletaModel" src="assets/models/bicicleta-will.glb"></a-asset-item>
-      <audio id="dustinAudio1" src="assets/audio/dustin-missao-1.mp3"></audio>
-      <audio id="dustinAudio2" src="assets/audio/dustin-missao-2.mp3"></audio>
-    </a-assets>
-    <a-entity id="bikeEntity" gps-entity-place="latitude: -27.63092200080834; longitude: -48.67980926832089" scale="0.5 0.5 0.5" visible="false">
-      <a-entity gltf-model="#bicicletaModel" rotation="0 180 0" scale="0.5 0.5 0.5"></a-entity>
-    </a-entity>
-    <a-entity camera gps-camera rotation-reader></a-entity>
-  </a-scene>
-  <script>
-    /* código JS igual ao anterior, apenas mantendo vr-mode-ui desativado e ajustando escalas/tamanhos para caber no retrato */
-  </script>
+  <audio id="dustinAudio" src="assets/audio/dustin-missao-1.mp3"></audio>
+  <img id="arrow" src="assets/img/arrow.svg" style="display:none;">
+</div>
+<script>
+let assetsLoaded = 0;
+const totalAssets = 3;
+function assetLoaded() {
+  assetsLoaded++;
+  document.getElementById('progress').style.width = (assetsLoaded / totalAssets) * 100 + '%';
+  if (assetsLoaded >= totalAssets) {
+    setTimeout(() => {
+      document.getElementById('loadingScreen').innerHTML = '<button id="startBtn">Iniciar o Jogo</button>';
+      document.getElementById('startBtn').onclick = startGame;
+    }, 500);
+  }
+}
+['assets/img/stranger-things-logo.png', 'assets/img/dustin.png', 'assets/audio/dustin-missao-1.mp3'].forEach(src => {
+  if (src.endsWith('.mp3')) {
+    fetch(src).then(assetLoaded);
+  } else {
+    const img = new Image();
+    img.onload = assetLoaded;
+    img.src = src;
+  }
+});
+function startGame() {
+  document.getElementById('loadingScreen').style.display = 'none';
+  document.getElementById('game').style.display = 'block';
+  document.getElementById('dustinImg').onclick = () => {
+    const audio = document.getElementById('dustinAudio');
+    audio.play();
+    audio.onended = () => {
+      document.getElementById('arrow').style.display = 'block';
+    };
+  };
+}
+</script>
 </body>
 </html>
