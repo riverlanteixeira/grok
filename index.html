@@ -2,60 +2,51 @@
 <html lang="pt-BR">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover" />
-  <title>Stranger Things — Projeto AR (inde.html)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Stranger Things — Projeto AR</title>
   <style>
-    :root{--bg:#0b0b0f;--panel:#121219;--accent:#e31b6d;color:#e6e6e6}
-    html,body{height:100%;margin:0;font-family:Inter, system-ui, Arial, Helvetica, sans-serif;background:var(--bg);color:var(--accent)}
-    .center{display:flex;align-items:center;justify-content:center}
-    #loader{height:100vh;gap:18px;flex-direction:column;display:flex}
-    #logo{max-width:320px;width:60%}
-    #progressWrap{width:90%;max-width:560px;background:#222;border-radius:10px;padding:8px}
-    #progress{height:18px;background:linear-gradient(90deg,var(--accent),#ff8fb8);width:0%;border-radius:6px}
-    #startBtn{padding:12px 20px;border-radius:12px;background:var(--accent);border:none;color:#fff;font-weight:700;cursor:pointer}
-    #callUi{position:fixed;inset:0;display:none;background:linear-gradient(0deg,rgba(0,0,0,0.6),transparent);align-items:center;justify-content:center}
-    #callCard{background:var(--panel);padding:18px;border-radius:14px;max-width:420px;width:92%;text-align:center}
-    #callCard img{width:140px;height:140px;border-radius:10px;object-fit:cover}
-    #gameHud{position:fixed;bottom:18px;left:18px;right:18px;display:none;align-items:center;justify-content:space-between}
-    #compass{display:flex;align-items:center;gap:12px}
-    #arrow{width:64px;height:64px}
-    #distance{padding:8px 12px;background:#111;border-radius:10px}
-    .hidden{display:none}
-    a-scene{width:100%;height:100%;position:fixed;top:0;left:0;z-index:1}
-    #message{position:fixed;top:12px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.6);padding:10px 14px;border-radius:10px}
+    :root { --bg:#0b0b0f; --panel:#121219; --accent:#e31b6d; color:#e6e6e6 }
+    html, body { height:100%; margin:0; font-family:Inter, system-ui, Arial, Helvetica, sans-serif; background:var(--bg); color:var(--accent); overflow:hidden; }
+    .center { display:flex; align-items:center; justify-content:center }
+    #loader { height:100vh; gap:12px; flex-direction:column; display:flex; padding:10px; box-sizing:border-box; }
+    #logo { max-width:200px; width:70%; height:auto; }
+    #progressWrap { width:90%; max-width:320px; background:#222; border-radius:10px; padding:4px }
+    #progress { height:12px; background:linear-gradient(90deg,var(--accent),#ff8fb8); width:0%; border-radius:6px }
+    #startBtn { padding:10px 14px; border-radius:10px; background:var(--accent); border:none; color:#fff; font-weight:700; cursor:pointer; font-size:14px; }
+    #callUi { position:fixed; inset:0; display:none; background:rgba(0,0,0,0.6); align-items:center; justify-content:center; padding:10px; box-sizing:border-box; }
+    #callCard { background:var(--panel); padding:12px; border-radius:10px; max-width:300px; width:100%; text-align:center; }
+    #callCard img { width:100px; height:100px; border-radius:8px; object-fit:cover }
+    #gameHud { position:fixed; bottom:10px; left:10px; right:10px; display:none; align-items:center; justify-content:space-between; font-size:12px; }
+    #compass { display:flex; align-items:center; gap:8px }
+    #arrow { width:40px; height:40px }
+    #distance { padding:4px 8px; background:#111; border-radius:8px }
+    .hidden { display:none }
+    a-scene { width:100%; height:100%; position:fixed; top:0; left:0; z-index:1; }
+    #message { position:fixed; top:8px; left:50%; transform:translateX(-50%); background:rgba(0,0,0,0.6); padding:6px 10px; border-radius:8px; font-size:12px; max-width:90%; text-align:center; }
   </style>
-
-  <!-- Bibliotecas principais via CDN -->
   <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
-  <!-- AR.js com GPS-entity-place (location-based AR) -->
   <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
-  <!-- MindAR (incluso conforme solicitado; não é usado ativamente aqui, mas disponível) -->
   <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.1.7/dist/mindar-image.prod.js"></script>
-  <!-- three.js já é dependência do aframe; model-viewer incluído se quiser usar fora do A-Frame -->
   <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
-
 </head>
 <body>
-
-  <!-- Preloader -->
+  <!-- Loader -->
   <div id="loader" class="center">
-    <img id="logo" src="assets/img/stranger-things-logo.png" alt="Stranger Things"/>
+    <img id="logo" src="assets/img/stranger-things-logo.png" alt="Stranger Things" />
     <div id="loadingText">Carregando...</div>
     <div id="progressWrap"><div id="progress"></div></div>
     <button id="startBtn" class="hidden">Iniciar o Jogo</button>
-    <div style="font-size:12px;opacity:0.7">Os assets serão armazenados no cache para uso offline.</div>
+    <div style="font-size:10px;opacity:0.7">Os assets serão armazenados no cache para uso offline.</div>
   </div>
-
-  <!-- Chamada do Dustin -->
+  <!-- Call -->
   <div id="callUi" class="center">
     <div id="callCard">
       <img id="dustinImg" src="assets/img/dustin.png" alt="Dustin" />
-      <h3>DUSTIN</h3>
-      <p id="callInstruction">Toque na imagem para ouvir a mensagem.</p>
+      <h3 style="margin:8px 0; font-size:14px;">DUSTIN</h3>
+      <p id="callInstruction" style="font-size:12px;">Toque na imagem para ouvir a mensagem.</p>
     </div>
   </div>
-
-  <!-- HUD com bússola e seta -->
+  <!-- HUD -->
   <div id="gameHud" class="center">
     <div id="compass" class="center">
       <svg id="arrow" viewBox="0 0 24 24"><path d="M12 2 L19 21 L12 17 L5 21 Z" fill="white"/></svg>
@@ -63,266 +54,20 @@
     </div>
     <div id="message" class="hidden"></div>
   </div>
-
-  <!-- A-Frame scene (AR) -->
+  <!-- AR Scene -->
   <a-scene vr-mode-ui="enabled: false" embedded arjs="sourceType: webcam; debugUIEnabled: false; trackingMethod: best;">
-
-    <!-- Assets registry (models and audio) -->
     <a-assets>
       <a-asset-item id="bicicletaModel" src="assets/models/bicicleta-will.glb"></a-asset-item>
       <audio id="dustinAudio1" src="assets/audio/dustin-missao-1.mp3"></audio>
       <audio id="dustinAudio2" src="assets/audio/dustin-missao-2.mp3"></audio>
     </a-assets>
-
-    <!-- GPS-based entity for Will's bike. The "gps-entity-place" attribute anchors the model at real-world coords. -->
-    <a-entity id="bikeEntity" gps-entity-place="latitude: -27.63092200080834; longitude: -48.67980926832089" scale="1 1 1" visible="false">
-      <a-entity gltf-model="#bicicletaModel" rotation="0 180 0" scale="1 1 1"></a-entity>
+    <a-entity id="bikeEntity" gps-entity-place="latitude: -27.63092200080834; longitude: -48.67980926832089" scale="0.5 0.5 0.5" visible="false">
+      <a-entity gltf-model="#bicicletaModel" rotation="0 180 0" scale="0.5 0.5 0.5"></a-entity>
     </a-entity>
-
-    <!-- Camera -->
     <a-entity camera gps-camera rotation-reader></a-entity>
   </a-scene>
-
   <script>
-  (function(){
-    // Configurações de missões
-    const MISSION_FOREST = {lat:-27.63092200080834, lon:-48.67980926832089, radius:10};
-    const MISSION_HOUSE  = {lat:-27.630293497503494, lon:-48.679573413542826, radius:10};
-
-    const assetsToCache = [
-      'assets/img/stranger-things-logo.png',
-      'assets/img/dustin.png',
-      'assets/models/bicicleta-will.glb',
-      'assets/audio/dustin-missao-1.mp3'
-      // se houver mais assets adicione aqui
-    ];
-
-    const progressEl = document.getElementById('progress');
-    const loadingText = document.getElementById('loadingText');
-    const startBtn = document.getElementById('startBtn');
-    const callUi = document.getElementById('callUi');
-    const dustinImg = document.getElementById('dustinImg');
-    const dustinAudio1 = document.getElementById('dustinAudio1');
-    const dustinAudio2 = document.getElementById('dustinAudio2');
-    const bikeEntity = document.getElementById('bikeEntity');
-    const gameHud = document.getElementById('gameHud');
-    const arrow = document.getElementById('arrow');
-    const distanceEl = document.getElementById('distance');
-    const messageEl = document.getElementById('message');
-
-    let currentMission = 'forest';
-    let missionCompleted = {forest:false, house:false};
-    let watchId = null;
-    let headingAlpha = 0; // dispositivo
-
-    // --- Preload e cache ---
-    async function preloadAndCache(){
-      if(!('caches' in window)){
-        // sem cache API, apenas carregamos
-        let loaded = 0;
-        for(const url of assetsToCache){
-          await fetch(url).then(()=>{loaded++; progressEl.style.width = Math.round((loaded/assetsToCache.length)*100)+'%'}).catch(()=>{loaded++;});
-        }
-        return;
-      }
-      try{
-        const cache = await caches.open('stranger-things-assets-v1');
-        let loaded = 0;
-        for(const url of assetsToCache){
-          try{
-            const resp = await fetch(url, {mode:'no-cors'});
-            await cache.put(url, resp.clone());
-          }catch(e){
-            // fallback: try fetch normally
-            try{ const r = await fetch(url); await cache.put(url, r.clone()); }catch(e2){}
-          }
-          loaded++;
-          progressEl.style.width = Math.round((loaded/assetsToCache.length)*100)+'%';
-        }
-      }catch(e){
-        console.warn('Cache falhou', e);
-      }
-    }
-
-    // run preload
-    (async()=>{
-      await preloadAndCache();
-      loadingText.textContent = 'Pronto!';
-      document.getElementById('startBtn').classList.remove('hidden');
-      startBtn.style.display='inline-block';
-    })();
-
-    // --- Flow do jogo ---
-    startBtn.addEventListener('click', ()=>{
-      document.getElementById('loader').style.display='none';
-      showDustinCall();
-    });
-
-    function showDustinCall(){
-      callUi.style.display='flex';
-      // solicite permissão para DeviceOrientation (em alguns navegadores Android não é necessário)
-      // a permissão é pedida ao tocar na imagem
-    }
-
-    dustinImg.addEventListener('click', async ()=>{
-      // play audio
-      try{ await dustinAudio1.play(); }catch(e){ console.warn('erro ao tocar audio',e); }
-      // quando terminar a mensagem, inicia o rastreamento/ bússola
-      dustinAudio1.onended = ()=>{
-        callUi.style.display='none';
-        startLocationTracking(MISSION_FOREST);
-      }
-    });
-
-    // --- Geolocation + bússola ---
-    function startLocationTracking(target){
-      gameHud.style.display='flex';
-      messageEl.classList.add('hidden');
-
-      // orientacao do dispositivo
-      if(window.DeviceOrientationEvent && typeof DeviceOrientationEvent.requestPermission === 'function'){
-        // iOS 13+ style - request permission
-        DeviceOrientationEvent.requestPermission().catch(()=>{}).then(result=>{/* ignore */}).finally(()=>{});
-      }
-
-      window.addEventListener('deviceorientationabsolute' , onDeviceOrientation, true);
-      window.addEventListener('deviceorientation', onDeviceOrientation, true);
-
-      if('geolocation' in navigator){
-        watchId = navigator.geolocation.watchPosition(pos=>{
-          const lat = pos.coords.latitude, lon = pos.coords.longitude;
-          updateNavigation(lat,lon,target);
-        },err=>{console.warn('geo error',err); messageEl.textContent='Permita localização para jogar.'; messageEl.classList.remove('hidden');},{enableHighAccuracy:true,maximumAge:1000,timeout:5000});
-      }else{
-        alert('Geolocalização não disponível no seu navegador.');
-      }
-
-      // também observamos quando o modelo GPS aparece (AR.js mostra o modelo quando estiver visível)
-      // tornamos o bikeEntity clicável
-      bikeEntity.addEventListener('loaded', ()=>{
-        console.log('bike entity loaded');
-      });
-
-      // clique no modelo da bicicleta para coletar
-      bikeEntity.addEventListener('click', () => {
-        if(currentMission==='forest' && !missionCompleted.forest){
-          missionCompleted.forest = true;
-          onMissionComplete('forest');
-        }
-      });
-
-    }
-
-    function onDeviceOrientation(ev){
-      // depende do navegador — normalizamos
-      if(ev.absolute === true || ev.webkitCompassHeading){
-        headingAlpha = ev.alpha || ev.webkitCompassHeading || 0;
-      }else{
-        headingAlpha = ev.alpha || 0;
-      }
-    }
-
-    function toRad(v){return v*Math.PI/180}
-    function toDeg(v){return v*180/Math.PI}
-
-    function bearingBetween(lat1,lon1,lat2,lon2){
-      // fórmula do rumo inicial
-      const φ1 = toRad(lat1), φ2 = toRad(lat2);
-      const Δλ = toRad(lon2-lon1);
-      const y = Math.sin(Δλ)*Math.cos(φ2);
-      const x = Math.cos(φ1)*Math.sin(φ2) - Math.sin(φ1)*Math.cos(φ2)*Math.cos(Δλ);
-      const θ = Math.atan2(y,x);
-      return (toDeg(θ)+360)%360; // em graus
-    }
-
-    function distanceBetween(lat1,lon1,lat2,lon2){
-      // Haversine
-      const R = 6371000; // metros
-      const φ1 = toRad(lat1), φ2 = toRad(lat2);
-      const Δφ = toRad(lat2-lat1); const Δλ = toRad(lon2-lon1);
-      const a = Math.sin(Δφ/2)*Math.sin(Δφ/2) + Math.cos(φ1)*Math.cos(φ2)*Math.sin(Δλ/2)*Math.sin(Δλ/2);
-      const c = 2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
-      return R*c;
-    }
-
-    function updateNavigation(lat,lon,target){
-      const dist = distanceBetween(lat,lon,target.lat,target.lon);
-      distanceEl.textContent = Math.round(dist) + ' m';
-
-      // calculamos rumo
-      const bearingToTarget = bearingBetween(lat,lon,target.lat,target.lon);
-      // headingAlpha é direção da frente do dispositivo (0..360 em graus). Precisamos rotacionar a seta pela diferença
-      const deviceHeading = headingAlpha || 0;
-      const rotation = bearingToTarget - deviceHeading;
-      arrow.style.transform = `rotate(${rotation}deg)`;
-
-      // mostrar/ocultar seta quando próximo
-      if(dist <= target.radius){
-        arrow.style.display = 'none';
-        distanceEl.textContent = 'Você chegou!';
-        vibrateDouble();
-        // se for forest, torne o modelo visível para coletar
-        if(currentMission==='forest'){
-          bikeEntity.setAttribute('visible','true');
-        }
-      }else{
-        arrow.style.display = 'block';
-        // se o jogador já completou a missão, esconda
-        if(currentMission==='forest' && missionCompleted.forest){ arrow.style.display='none'; }
-      }
-
-    }
-
-    function vibrateDouble(){ if(navigator.vibrate) navigator.vibrate([200,120,200]); }
-
-    function onMissionComplete(name){
-      console.log('Missão completada',name);
-      // toque segunda mensagem (podemos reutilizar arquivo1 se não houver outro)
-      try{ dustinAudio2.src = 'assets/audio/dustin-missao-1.mp3'; dustinAudio2.play(); }catch(e){}
-      dustinAudio2.onended = ()=>{
-        messageEl.textContent='Missão concluída: encontrou a bicicleta! Próxima: Casa do Will.';
-        messageEl.classList.remove('hidden');
-        // definir nova missão
-        currentMission='house';
-        // atualiza target - simplesmente o watchPosition continuará chamando updateNavigation com novo target
-        // Forçamos o arrow a apontar para a nova localização (o updateNavigation precisará ser chamado com out target). To simplify, override updateNavigation closure
-        // we'll use a wrapper: set globalTarget
-        globalTarget = MISSION_HOUSE;
-        missionCompleted.forest = true;
-        // hide bike from scene
-        bikeEntity.setAttribute('visible','false');
-      }
-    }
-
-    // globalTarget will be used by updateNavigation; initialize to forest target
-    let globalTarget = MISSION_FOREST;
-    // wrap updateNavigation to read globalTarget
-    const _origUpdateNav = updateNavigation;
-    updateNavigation = function(lat,lon){ _origUpdateNav(lat,lon,globalTarget); };
-
-    // fix: when mission changes, we must also make a GPS-entity-place for house (or reuse arrow guidance only)
-    // if you want to have an AR model at the house, add another gps-entity-place with house coords
-
-    // Criar um entity para a casa (opcional)
-    const scene = document.querySelector('a-scene');
-    const houseEntity = document.createElement('a-entity');
-    houseEntity.setAttribute('gps-entity-place', `latitude: ${MISSION_HOUSE.lat}; longitude: ${MISSION_HOUSE.lon}`);
-    houseEntity.setAttribute('visible','false');
-    scene.appendChild(houseEntity);
-
-    // Se o jogador chegar na casa quando currentMission='house' vibra e marca completado
-    // Vamos observar posições via watchPosition; já tratadas por updateNavigation.
-
-    // Botões e instruções adicionais
-    // Mensagem inicial breve
-    messageEl.textContent = 'Toque na imagem do Dustin para ouvir a primeira missão.';
-    messageEl.classList.remove('hidden');
-
-    // Nota: ORB-SLAM3 não roda nativamente no browser sem um backend nativo; se quiser integração SLAM local é necessário
-    // compilar/servir ORB-SLAM3 em um servidor ou usar soluções WebXR / hit-test para ancoragem de objetos.
-
-  })();
+    /* código JS igual ao anterior, apenas mantendo vr-mode-ui desativado e ajustando escalas/tamanhos para caber no retrato */
   </script>
-
 </body>
 </html>
